@@ -1,0 +1,2661 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
+<title>Online Quiz System</title>
+<style>
+  :root{
+    --bg:#F3F5F4;
+    --surface:#FFFFFF;
+    --surface-soft:#EAEEEC;
+    --ink:#152521;
+    --ink-soft:#5B6B65;
+    --line:#DCE3E0;
+    --primary:#25543F;
+    --primary-ink:#0F2E20;
+    --primary-soft:#DEEAE3;
+    --accent:#D98A2B;
+    --accent-ink:#7A4A0F;
+    --accent-soft:#FBEAD2;
+    --success:#2E9E6C;
+    --success-soft:#DFF3E9;
+    --danger:#C4453A;
+    --danger-soft:#FBE4E1;
+    --radius:14px;
+    --radius-sm:9px;
+    --shadow:0 1px 2px rgba(21,37,33,0.06), 0 8px 24px -12px rgba(21,37,33,0.18);
+    --font-display: Georgia, 'Iowan Old Style', 'Palatino Linotype', 'Book Antiqua', serif;
+    --font-body: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    --font-mono: ui-monospace, 'SF Mono', 'Cascadia Code', 'Roboto Mono', Menlo, Consolas, monospace;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--bg);
+    color:var(--ink);
+    font-family:var(--font-body);
+    min-height:100vh;
+    -webkit-font-smoothing:antialiased;
+  }
+  button{font-family:inherit;}
+  input,select,textarea{font-family:inherit;}
+  .app{
+    min-height:100vh;
+    display:flex;
+    flex-direction:column;
+  }
+  /* ---------- Top bar ---------- */
+  .topbar{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    padding:16px 22px;
+    background:var(--primary);
+    color:#fff;
+  }
+  .brand{
+    display:flex;
+    align-items:baseline;
+    gap:10px;
+    cursor:pointer;
+  }
+  .brand .mark{
+    font-family:var(--font-mono);
+    font-weight:700;
+    letter-spacing:2px;
+    background:rgba(255,255,255,0.14);
+    padding:3px 8px;
+    border-radius:6px;
+    font-size:12px;
+  }
+  .brand .name{
+    font-family:var(--font-display);
+    font-size:19px;
+    letter-spacing:0.2px;
+  }
+  .topbar-actions{display:flex;gap:8px;align-items:center;}
+  .pill-btn{
+    background:rgba(255,255,255,0.12);
+    color:#fff;
+    border:1px solid rgba(255,255,255,0.28);
+    border-radius:999px;
+    padding:7px 14px;
+    font-size:13px;
+    cursor:pointer;
+    transition:background .15s ease;
+  }
+  .pill-btn:hover{background:rgba(255,255,255,0.22);}
+
+  .main{
+    flex:1;
+    width:100%;
+    max-width:980px;
+    margin:0 auto;
+    padding:28px 18px 60px;
+  }
+  .screen{display:none;}
+  .screen.active{display:block;animation:fade .25s ease;}
+  @keyframes fade{from{opacity:0;transform:translateY(4px);}to{opacity:1;transform:none;}}
+
+  /* ---------- Cards / generic ---------- */
+  .card{
+    background:var(--surface);
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    box-shadow:var(--shadow);
+    padding:26px;
+  }
+  .card + .card{margin-top:16px;}
+  .eyebrow{
+    font-family:var(--font-mono);
+    text-transform:uppercase;
+    letter-spacing:1.5px;
+    font-size:11px;
+    color:var(--primary);
+    font-weight:700;
+    margin:0 0 6px;
+  }
+  h1.page-title{
+    font-family:var(--font-display);
+    font-size:30px;
+    margin:0 0 6px;
+    color:var(--primary-ink);
+  }
+  .subtitle{color:var(--ink-soft);margin:0 0 22px;font-size:14.5px;}
+  label{
+    display:block;
+    font-size:12.5px;
+    font-weight:600;
+    color:var(--ink-soft);
+    margin:0 0 6px;
+    text-transform:uppercase;
+    letter-spacing:.4px;
+  }
+  .field{margin-bottom:16px;}
+  input[type=text],input[type=password],input[type=number],input[type=datetime-local],select,textarea{
+    width:100%;
+    padding:11px 12px;
+    border:1.5px solid var(--line);
+    border-radius:var(--radius-sm);
+    font-size:15px;
+    background:#fff;
+    color:var(--ink);
+    outline:none;
+    transition:border-color .15s ease;
+  }
+  input:focus,select:focus,textarea:focus{border-color:var(--primary);}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+  .grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;}
+  @media (max-width:680px){
+    .grid2,.grid3{grid-template-columns:1fr;}
+  }
+  .checkline{
+    display:flex;align-items:center;gap:9px;
+    padding:10px 0;
+    font-size:14.5px;
+    color:var(--ink);
+  }
+  .checkline input{width:18px;height:18px;accent-color:var(--primary);}
+
+  .btn{
+    display:inline-flex;align-items:center;justify-content:center;gap:8px;
+    border:none;border-radius:999px;
+    padding:12px 22px;
+    font-size:14.5px;font-weight:600;
+    cursor:pointer;
+    transition:transform .08s ease, box-shadow .15s ease, background .15s ease;
+  }
+  .btn:active{transform:scale(0.98);}
+  .btn-primary{background:var(--primary);color:#fff;}
+  .btn-primary:hover{background:var(--primary-ink);}
+  .btn-accent{background:var(--accent);color:#fff;}
+  .btn-accent:hover{background:var(--accent-ink);}
+  .btn-ghost{background:transparent;color:var(--primary);border:1.5px solid var(--primary-soft);}
+  .btn-ghost:hover{background:var(--primary-soft);}
+  .btn-danger{background:transparent;color:var(--danger);border:1.5px solid #EFC9C4;}
+  .btn-danger:hover{background:var(--danger-soft);}
+  .btn-sm{padding:8px 14px;font-size:13px;}
+  .btn-block{width:100%;}
+  .btn[disabled]{opacity:.5;cursor:not-allowed;}
+  .btn-row{display:flex;gap:10px;flex-wrap:wrap;margin-top:6px;}
+
+  .msg{
+    padding:12px 14px;border-radius:var(--radius-sm);font-size:14px;margin-bottom:16px;
+    display:none;
+  }
+  .msg.show{display:block;}
+  .msg-error{background:var(--danger-soft);color:var(--danger);}
+  .msg-ok{background:var(--success-soft);color:var(--success);}
+  .hidden{display:none !important;}
+
+  /* ---------- Home / mode select ---------- */
+  .mode-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:28px;}
+  @media (max-width:640px){.mode-grid{grid-template-columns:1fr;}}
+  .mode-card{
+    background:var(--surface);border:1.5px solid var(--line);border-radius:var(--radius);
+    padding:30px 24px;cursor:pointer;text-align:left;box-shadow:var(--shadow);
+    transition:border-color .15s ease, transform .1s ease;
+  }
+  .mode-card:hover{border-color:var(--primary);transform:translateY(-2px);}
+  .mode-card .icon{
+    width:44px;height:44px;border-radius:10px;background:var(--primary-soft);
+    display:flex;align-items:center;justify-content:center;font-size:20px;margin-bottom:14px;
+  }
+  .mode-card h3{font-family:var(--font-display);margin:0 0 6px;font-size:21px;color:var(--primary-ink);}
+  .mode-card p{margin:0;color:var(--ink-soft);font-size:14px;line-height:1.5;}
+
+  /* ---------- Role select (landing) ---------- */
+  .role-grid{display:grid;grid-template-columns:1fr 1fr;gap:22px;margin-top:32px;}
+  @media (max-width:640px){.role-grid{grid-template-columns:1fr;}}
+  .role-btn{
+    background:var(--surface);border:1.5px solid var(--line);border-radius:var(--radius);
+    padding:48px 24px;cursor:pointer;text-align:center;box-shadow:var(--shadow);
+    display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;
+    transition:border-color .15s ease, transform .1s ease, box-shadow .15s ease;
+  }
+  .role-btn:hover{border-color:var(--primary);transform:translateY(-3px);}
+  .role-btn:active{transform:scale(0.98);}
+  .role-emoji{font-size:58px;line-height:1;}
+  .role-label{font-family:var(--font-display);font-size:25px;color:var(--primary-ink);font-weight:700;}
+
+  /* ---------- Hero ---------- */
+  .hero{
+    text-align:center;padding:36px 10px 6px;
+  }
+  .hero .ticket{
+    display:inline-block;
+    font-family:var(--font-mono);
+    letter-spacing:3px;
+    font-size:12px;
+    color:var(--accent-ink);
+    background:var(--accent-soft);
+    border:1px dashed var(--accent);
+    padding:6px 14px;border-radius:999px;
+    margin-bottom:18px;
+  }
+  .hero h1{font-family:var(--font-display);font-size:38px;margin:0 0 10px;color:var(--primary-ink);}
+  .hero p{color:var(--ink-soft);font-size:15.5px;max-width:520px;margin:0 auto;}
+
+  /* ---------- Dashboard ---------- */
+  .dash-header{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;margin-bottom:18px;}
+  .quiz-list{display:flex;flex-direction:column;gap:12px;}
+  .quiz-row{
+    background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);
+    padding:16px 18px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:14px;
+    box-shadow:var(--shadow);
+  }
+  .quiz-row .info{display:flex;flex-direction:column;gap:4px;}
+  .quiz-row .info .title{font-weight:700;font-size:16px;color:var(--primary-ink);}
+  .quiz-row .info .meta{font-size:12.5px;color:var(--ink-soft);}
+  .code-chip{
+    font-family:var(--font-mono);font-weight:700;letter-spacing:2px;
+    background:var(--primary-soft);color:var(--primary-ink);
+    padding:4px 10px;border-radius:6px;font-size:13px;
+  }
+  .status-badge{
+    font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;
+    padding:3px 9px;border-radius:999px;
+  }
+  .status-badge.open{background:var(--success-soft);color:var(--success);}
+  .status-badge.closed{background:var(--danger-soft);color:var(--danger);}
+  .empty-state{
+    text-align:center;padding:50px 20px;color:var(--ink-soft);
+  }
+  .empty-state .big{font-size:34px;margin-bottom:10px;}
+
+  /* ---------- Question editor ---------- */
+  .q-card{
+    border:1.5px solid var(--line);border-radius:var(--radius);padding:18px;margin-bottom:14px;background:#FCFDFC;
+  }
+  .q-card-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;}
+  .q-num{font-family:var(--font-mono);font-weight:700;color:var(--primary);font-size:13px;}
+  .choice-row{display:flex;align-items:center;gap:10px;margin-bottom:8px;}
+  .choice-row input[type=radio]{width:18px;height:18px;accent-color:var(--success);flex-shrink:0;}
+  .choice-letter{
+    font-family:var(--font-mono);font-weight:700;color:var(--ink-soft);width:18px;flex-shrink:0;
+  }
+  .qcount-bar{
+    display:flex;align-items:center;justify-content:space-between;
+    background:var(--primary-soft);border-radius:var(--radius-sm);padding:10px 14px;margin-bottom:16px;
+    font-size:13.5px;color:var(--primary-ink);font-weight:600;
+  }
+  .ai-panel{
+    background:var(--accent-soft);border:1.5px dashed var(--accent);border-radius:var(--radius);
+    padding:18px;margin-bottom:18px;
+  }
+  .ai-panel h4{margin:0 0 4px;font-family:var(--font-display);color:var(--accent-ink);font-size:17px;}
+  .ai-panel p{margin:0 0 14px;color:var(--accent-ink);font-size:13px;opacity:.85;}
+
+  /* ---------- Submissions table ---------- */
+  .table-wrap{overflow-x:auto;border:1px solid var(--line);border-radius:var(--radius);}
+  table{width:100%;border-collapse:collapse;font-size:13.5px;min-width:760px;}
+  th,td{padding:10px 12px;text-align:left;border-bottom:1px solid var(--line);white-space:nowrap;}
+  th{background:var(--surface-soft);font-size:11.5px;text-transform:uppercase;letter-spacing:.4px;color:var(--ink-soft);}
+  tr:last-child td{border-bottom:none;}
+  .pass-tag{color:var(--success);font-weight:700;}
+  .fail-tag{color:var(--danger);font-weight:700;}
+
+  /* ---------- Student entry ---------- */
+  .entry-card{max-width:480px;margin:0 auto;}
+
+  /* ---------- Quiz taking ---------- */
+  .quiz-header{
+    display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;flex-wrap:wrap;gap:10px;
+  }
+  .quiz-header .qtitle{font-family:var(--font-display);font-size:20px;color:var(--primary-ink);}
+  .timer-pill{
+    font-family:var(--font-mono);font-weight:700;font-size:16px;
+    background:var(--primary-soft);color:var(--primary-ink);
+    padding:8px 16px;border-radius:999px;letter-spacing:1px;
+    transition:background .3s ease, color .3s ease;
+  }
+  .timer-pill.warn{background:var(--accent-soft);color:var(--accent-ink);}
+  .timer-pill.danger{background:var(--danger-soft);color:var(--danger);animation:pulse 1s infinite;}
+  @keyframes pulse{0%,100%{opacity:1;}50%{opacity:.55;}}
+  .progress-track{
+    height:6px;background:var(--surface-soft);border-radius:999px;overflow:hidden;margin-bottom:26px;
+  }
+  .progress-fill{height:100%;background:var(--primary);border-radius:999px;transition:width .25s ease;}
+  .progress-label{font-size:12px;color:var(--ink-soft);margin-bottom:6px;font-family:var(--font-mono);}
+  .question-text{font-size:19px;line-height:1.5;margin:6px 0 24px;color:var(--ink);}
+  .choice-option{
+    display:flex;align-items:center;gap:14px;
+    border:1.5px solid var(--line);border-radius:var(--radius-sm);
+    padding:14px 16px;margin-bottom:10px;cursor:pointer;transition:border-color .15s ease, background .15s ease;
+  }
+  .choice-option:hover{border-color:var(--primary);}
+  .choice-option.selected{border-color:var(--primary);background:var(--primary-soft);}
+  .choice-option input{width:19px;height:19px;accent-color:var(--primary);flex-shrink:0;}
+  .choice-option .opt-letter{
+    font-family:var(--font-mono);font-weight:700;color:var(--ink-soft);width:20px;flex-shrink:0;
+  }
+  .choice-option .opt-text{font-size:15px;}
+  .quiz-footer{display:flex;justify-content:flex-end;margin-top:22px;}
+  .no-back-note{font-size:12px;color:var(--ink-soft);margin-top:10px;text-align:center;}
+
+  /* ---------- Results ---------- */
+  .result-card{text-align:center;padding:44px 26px;}
+  .result-score{font-family:var(--font-display);font-size:56px;color:var(--primary-ink);margin:6px 0;}
+  .result-tag{
+    display:inline-block;padding:6px 18px;border-radius:999px;font-weight:700;font-size:13px;text-transform:uppercase;letter-spacing:.5px;margin-bottom:14px;
+  }
+  .result-tag.pass{background:var(--success-soft);color:var(--success);}
+  .result-tag.fail{background:var(--danger-soft);color:var(--danger);}
+  .result-stats{display:flex;justify-content:center;gap:34px;margin-top:22px;flex-wrap:wrap;}
+  .result-stats div{text-align:center;}
+  .result-stats .num{font-family:var(--font-mono);font-weight:700;font-size:20px;color:var(--primary-ink);}
+  .result-stats .lab{font-size:11.5px;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.4px;}
+
+  .loading-overlay{
+    position:fixed;inset:0;background:rgba(21,37,33,0.35);
+    display:none;align-items:center;justify-content:center;z-index:999;
+  }
+  .loading-overlay.show{display:flex;}
+  .spinner{
+    width:42px;height:42px;border-radius:50%;
+    border:4px solid rgba(255,255,255,0.35);border-top-color:#fff;
+    animation:spin .8s linear infinite;
+  }
+  @keyframes spin{to{transform:rotate(360deg);}}
+
+  .link-btn{background:none;border:none;color:var(--primary);cursor:pointer;font-size:13.5px;text-decoration:underline;padding:0;}
+  .back-row{margin-bottom:16px;}
+  .helper-text{font-size:12.5px;color:var(--ink-soft);margin-top:-10px;margin-bottom:16px;}
+  .setup-note{
+    background:var(--surface-soft);border-radius:var(--radius-sm);padding:14px 16px;font-size:12.5px;color:var(--ink-soft);margin-top:18px;
+  }
+  .setup-note code{background:#fff;padding:1px 5px;border-radius:4px;border:1px solid var(--line);}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <div class="topbar">
+    <div class="brand" onclick="goHome()">
+      <span class="mark">OQS</span>
+      <span class="name">Online Quiz System</span>
+    </div>
+    <div class="topbar-actions" id="topbarActions"></div>
+  </div>
+
+  <div class="loading-overlay" id="loadingOverlay"><div class="spinner"></div></div>
+
+  <div class="main">
+
+    <!-- ============ HOME / ROLE SELECT ============ -->
+    <div class="screen active" id="screen-home">
+      <div class="hero">
+        <div class="ticket">SCAN · CODE · ANSWER</div>
+        <h1>Who are you?</h1>
+        <p>Choose your role to continue.</p>
+      </div>
+      <div class="role-grid">
+        <button class="role-btn" onclick="enterTeacherMode()">
+          <div class="role-emoji">👨‍🏫</div>
+          <div class="role-label">Teacher</div>
+        </button>
+        <button class="role-btn" onclick="enterStudentMode()">
+          <div class="role-emoji">👨‍🎓</div>
+          <div class="role-label">Student</div>
+        </button>
+      </div>
+    </div>
+
+    <!-- ============ TEACHER LOGIN ============ -->
+    <div class="screen" id="screen-teacher-login">
+      <div class="card entry-card">
+        <p class="eyebrow">Teacher Mode</p>
+        <h1 class="page-title">Sign in</h1>
+        <p class="subtitle">Enter the teacher password to manage quizzes.</p>
+        <div class="msg msg-error" id="loginMsg"></div>
+        <div class="field">
+          <label>Password</label>
+          <input type="password" id="teacherPasswordInput" placeholder="••••••••">
+        </div>
+        <button class="btn btn-primary btn-block" onclick="doTeacherLogin()">Sign in</button>
+        <div class="btn-row"><button class="link-btn" onclick="goHome()">← Back</button></div>
+      </div>
+    </div>
+
+    <!-- ============ TEACHER DASHBOARD ============ -->
+    <div class="screen" id="screen-teacher-dashboard">
+      <div class="dash-header">
+        <div>
+          <p class="eyebrow">Teacher Mode</p>
+          <h1 class="page-title" style="margin-bottom:0;">Your quizzes</h1>
+        </div>
+        <div class="btn-row" style="margin-top:0;">
+          <button class="btn btn-ghost btn-sm" onclick="goHome()">← Back</button>
+          <button class="btn btn-accent" onclick="openQuizEditor(null)">+ New Quiz</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="ai-panel" style="margin-bottom:0;">
+          <h4>🔑 AI Settings</h4>
+          <p>Add your free Gemini API key so the "Generate questions with AI" tool in the quiz editor can create multiple-choice questions for you. Get a free key at <a href="https://aistudio.google.com/apikey" target="_blank" style="color:var(--accent-ink);">aistudio.google.com/apikey</a>. The key is stored only in this browser (localStorage) and is sent directly from your browser to Google — never to any other server.</p>
+          <div class="field" style="margin-bottom:10px;">
+            <label>Gemini API Key</label>
+            <input type="password" id="geminiKeyInput" placeholder="Paste your Gemini API key">
+          </div>
+          <div class="msg msg-error" id="geminiKeyMsg"></div>
+          <div class="btn-row">
+            <button class="btn btn-primary btn-sm" id="geminiSaveBtn" onclick="saveGeminiKey()">Save</button>
+            <button class="btn btn-ghost btn-sm hidden" id="geminiEditBtn" onclick="editGeminiKey()">Edit</button>
+            <button class="btn btn-danger btn-sm hidden" id="geminiClearBtn" onclick="clearGeminiKey()">Clear</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="ai-panel" style="margin-bottom:0;">
+          <h4>🌐 Website URL</h4>
+          <p>If you've published this app to GitHub Pages (or another host), paste the live URL here — e.g. <code>https://username.github.io/quiz-app/</code>. Student links will then be built using this address instead of the local file path, so they work on any device. The URL is stored only in this browser (localStorage).</p>
+          <div class="field" style="margin-bottom:10px;">
+            <label>GitHub Pages / Website URL</label>
+            <input type="text" id="websiteUrlInput" placeholder="https://username.github.io/quiz-app/">
+          </div>
+          <div class="msg msg-error" id="websiteUrlMsg"></div>
+          <div class="btn-row">
+            <button class="btn btn-primary btn-sm" id="websiteUrlSaveBtn" onclick="saveWebsiteUrl()">Save</button>
+            <button class="btn btn-ghost btn-sm hidden" id="websiteUrlEditBtn" onclick="editWebsiteUrl()">Edit</button>
+            <button class="btn btn-danger btn-sm hidden" id="websiteUrlClearBtn" onclick="clearWebsiteUrl()">Clear</button>
+            <button class="btn btn-ghost btn-sm" onclick="copyStudentLink()">📋 Copy Student Link</button>
+          </div>
+        </div>
+      </div>
+
+      <div id="quizListWrap"><div class="quiz-list" id="quizList"></div></div>
+    </div>
+
+    <!-- ============ TEACHER QUIZ EDITOR ============ -->
+    <div class="screen" id="screen-quiz-editor">
+      <div class="back-row"><button class="link-btn" onclick="showScreen('screen-teacher-dashboard'); loadQuizzes();">← Back to dashboard</button></div>
+      <div class="card">
+        <p class="eyebrow" id="editorEyebrow">New Quiz</p>
+        <h1 class="page-title" id="editorTitle">Create a quiz</h1>
+        <div class="msg msg-error" id="editorMsg"></div>
+
+        <div class="grid2">
+          <div class="field">
+            <label>Quiz title</label>
+            <input type="text" id="qTitle" placeholder="e.g. Photosynthesis Basics">
+          </div>
+          <div class="field">
+            <label>Subject</label>
+            <input type="text" id="qSubject" placeholder="e.g. Science 7">
+          </div>
+        </div>
+
+        <div class="grid2">
+          <div class="field">
+            <label>Quiz code</label>
+            <input type="text" id="qCode" placeholder="Auto-generated if left blank" style="text-transform:uppercase;">
+          </div>
+          <div class="field">
+            <label>Timer (minutes)</label>
+            <input type="number" id="qTimer" value="15" min="1" max="300">
+          </div>
+        </div>
+
+        <div class="grid2">
+          <div class="field">
+            <label>Passing score (%)</label>
+            <input type="number" id="qPassing" value="60" min="0" max="100">
+          </div>
+          <div class="field"></div>
+        </div>
+
+        <div class="grid2">
+          <div class="field">
+            <label>Opens</label>
+            <input type="datetime-local" id="qOpen">
+          </div>
+          <div class="field">
+            <label>Closes</label>
+            <input type="datetime-local" id="qClose">
+          </div>
+        </div>
+
+        <label class="checkline"><input type="checkbox" id="qRandQ" checked> Randomize question order per student</label>
+        <label class="checkline"><input type="checkbox" id="qRandC" checked> Randomize choice order per question</label>
+        <label class="checkline"><input type="checkbox" id="qOneAttempt" checked> Allow only one attempt per student</label>
+      </div>
+
+      <div class="card">
+        <div class="ai-panel">
+          <h4>✨ Generate questions with AI</h4>
+          <p>Give a topic and count — you can edit or delete anything it produces before saving. Optionally upload a reference file and/or list competencies to keep the AI tightly focused on your material.</p>
+          <div class="grid3">
+            <div class="field" style="margin-bottom:10px;">
+              <label>Topic</label>
+              <input type="text" id="aiTopic" placeholder="e.g. Cell structure">
+            </div>
+            <div class="field" style="margin-bottom:10px;">
+              <label># Questions</label>
+              <input type="number" id="aiCount" value="5" min="1" max="50">
+            </div>
+            <div class="field" style="margin-bottom:10px;">
+              <label>Difficulty</label>
+              <select id="aiDifficulty">
+                <option value="easy">Easy</option>
+                <option value="medium" selected>Medium</option>
+                <option value="hard">Hard</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="field" style="margin-bottom:10px;">
+            <label>Competencies / learning objectives <span style="font-weight:400; opacity:.7;">(optional)</span></label>
+            <textarea id="aiCompetencies" rows="3" placeholder="e.g. MELC: Identify the parts of a plant cell and their functions (Science 6, Q1, Week 3). List one competency per line if you have several."></textarea>
+            <p style="margin:4px 0 0; font-size:12px; opacity:.75;">Listing the exact competencies keeps every question specific to what you're teaching, instead of drifting into related-but-untaught territory.</p>
+          </div>
+
+          <div class="field" style="margin-bottom:6px;">
+            <label>Reference file <span style="font-weight:400; opacity:.7;">(optional — Word .docx or PDF)</span></label>
+            <p style="margin:2px 0 10px; font-size:13px; opacity:.85;">Upload your lesson notes, module, or textbook excerpt. The AI will base questions on this content first; only if it can't reach your requested count will it add closely related questions — always staying within this material and your topic/competencies, never wandering beyond them.</p>
+            <input type="file" id="aiReferenceInput" accept=".docx,.pdf" class="hidden" onchange="handleAIReferenceUpload(this)">
+            <div class="btn-row" style="flex-wrap:wrap;">
+              <button class="btn btn-ghost btn-sm" onclick="document.getElementById('aiReferenceInput').click()">⬆ Upload reference (.docx / .pdf)</button>
+              <button class="btn btn-ghost btn-sm hidden" id="aiReferenceClearBtn" onclick="clearAIReference()">✕ Remove reference</button>
+            </div>
+            <div class="msg" id="aiReferenceMsg"></div>
+          </div>
+
+          <div class="field" style="margin-bottom:10px;">
+            <label>Or paste reference text directly <span style="font-weight:400; opacity:.7;">(optional)</span></label>
+            <p style="margin:2px 0 10px; font-size:13px; opacity:.85;">No file handy? Copy-paste notes, a passage, or a lesson excerpt here instead — the AI will use it the same way: paraphrasing it into questions first, and only branching out (still within scope) if it needs more to reach your requested count.</p>
+            <textarea id="aiReferencePaste" rows="6" placeholder="Paste lesson notes, a passage, or any reference text here…"></textarea>
+          </div>
+
+          <button class="btn btn-accent btn-sm" id="aiGenerateBtn" onclick="generateAI()">Generate questions</button>
+        </div>
+
+        <div class="qcount-bar">
+          <span id="qCountLabel">0 / 50 questions</span>
+          <span>Multiple choice</span>
+        </div>
+
+        <div id="questionsWrap"></div>
+        <button class="btn btn-ghost btn-block" id="addQBtn" onclick="addQuestion()">+ Add question</button>
+      </div>
+
+      <div class="card">
+        <div class="ai-panel">
+          <h4>📄 Word file tools</h4>
+          <p>Download this quiz as a Word file, get a blank template to fill in yourself (in Word or by hand), or generate questions with another AI tool like ChatGPT or Copilot and import them back in.</p>
+
+          <div class="btn-row" style="flex-wrap:wrap;">
+            <button class="btn btn-ghost btn-sm" onclick="downloadQuizAsWord()">⬇ Download this quiz (.docx)</button>
+            <button class="btn btn-ghost btn-sm" onclick="downloadWordTemplate()">⬇ Download blank template (.docx)</button>
+            <button class="btn btn-ghost btn-sm" onclick="copyAIPrompt()">📋 Copy prompt for ChatGPT / Copilot</button>
+          </div>
+          <div class="msg msg-ok" id="aiExternalPromptMsg"></div>
+          <textarea id="aiExternalPromptBox" class="hidden" rows="8" readonly style="margin-top:8px;font-size:12px;" onclick="this.select()"></textarea>
+
+          <div style="margin-top:16px;border-top:1px solid var(--primary-soft);padding-top:16px;">
+            <label>Upload questions from a Word file</label>
+            <p style="margin:2px 0 10px;font-size:13px;opacity:.85;">Accepts .docx, .doc, or .txt files that follow the template format (Q1. / A) / B) / C) / D) / ANSWER:).</p>
+            <input type="file" id="wordUploadInput" accept=".docx,.doc,.txt" class="hidden" onchange="handleWordUpload(this)">
+            <button class="btn btn-ghost btn-sm" onclick="document.getElementById('wordUploadInput').click()">⬆ Upload questions from Word file</button>
+            <div class="msg" id="uploadWordMsg"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="btn-row">
+        <button class="btn btn-primary" onclick="saveQuiz()">Save quiz</button>
+        <button class="btn btn-ghost" onclick="showScreen('screen-teacher-dashboard'); loadQuizzes();">Cancel</button>
+      </div>
+    </div>
+
+    <!-- ============ SHARE QUIZ LINK ============ -->
+    <div class="screen" id="screen-share-link">
+      <div class="card entry-card">
+        <p class="eyebrow">✅ Quiz ready</p>
+        <h1 class="page-title" id="shareLinkTitle">Share with your students</h1>
+        <p class="subtitle">Send this link to your students instead of the HTML file. It opens directly to the student join screen with the quiz code already filled in.</p>
+
+        <div class="msg msg-error" id="shareLinkWarning"></div>
+
+        <div class="field">
+          <label>Quiz code</label>
+          <div class="code-chip" id="shareLinkCode" style="display:inline-block;"></div>
+        </div>
+
+        <div class="field">
+          <label>Shareable student link</label>
+          <input type="text" id="shareLinkBox" readonly onclick="this.select()">
+        </div>
+        <div class="msg msg-ok" id="shareLinkMsg"></div>
+
+        <div class="btn-row">
+          <button class="btn btn-primary btn-block" onclick="copyShareLink()">📋 Copy Student Link</button>
+        </div>
+        <div class="btn-row">
+          <button class="btn btn-ghost btn-block" onclick="showScreen('screen-teacher-dashboard'); loadQuizzes();">Done, back to dashboard</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ============ TEACHER SUBMISSIONS ============ -->
+    <div class="screen" id="screen-submissions">
+      <div class="back-row"><button class="link-btn" onclick="showScreen('screen-teacher-dashboard'); loadQuizzes();">← Back to dashboard</button></div>
+      <div class="dash-header">
+        <div>
+          <p class="eyebrow" id="subsCode"></p>
+          <h1 class="page-title" style="margin-bottom:0;" id="subsTitle">Submissions</h1>
+        </div>
+        <div class="btn-row" style="margin-top:0;">
+          <button class="btn btn-ghost" onclick="downloadCsv()">⬇ Download as Excel (CSV)</button>
+          <button class="btn btn-danger" onclick="clearSubmissionsConfirm()">🗑 Clear submissions</button>
+        </div>
+      </div>
+      <div class="card" style="padding:0; overflow:hidden;">
+        <div class="table-wrap" style="border:none; border-radius:0;">
+          <table id="subsTable">
+            <thead>
+              <tr>
+                <th>Name</th><th>Section</th><th>Score</th><th>%</th><th>Result</th>
+                <th>Started</th><th>Ended</th><th>Duration</th>
+              </tr>
+            </thead>
+            <tbody id="subsTbody"></tbody>
+          </table>
+        </div>
+      </div>
+      <div id="subsEmpty" class="empty-state" style="display:none;">
+        <div class="big">📭</div>
+        <div>No submissions yet for this quiz.</div>
+      </div>
+    </div>
+
+    <!-- ============ STUDENT ENTRY ============ -->
+    <div class="screen" id="screen-student-entry">
+      <div class="card entry-card">
+        <p class="eyebrow">Student Mode</p>
+        <h1 class="page-title">Join a quiz</h1>
+        <p class="subtitle">Ask your teacher for the quiz code if you don't have it.</p>
+        <div class="msg msg-error" id="studentMsg"></div>
+        <div class="field">
+          <label>Last name</label>
+          <input type="text" id="stLastName" placeholder="DELA CRUZ" oninput="this.value=this.value.toUpperCase();">
+        </div>
+        <div class="field">
+          <label>First name</label>
+          <input type="text" id="stFirstName" placeholder="JUAN" oninput="this.value=this.value.toUpperCase();">
+        </div>
+        <div class="field">
+          <label>Middle name <span style="font-weight:400; opacity:.7;">(optional)</span></label>
+          <input type="text" id="stMiddleName" placeholder="SANTOS" oninput="this.value=this.value.toUpperCase();">
+        </div>
+        <div class="field">
+          <label>Section</label>
+          <select id="stSection">
+            <option value="">Select your section</option>
+            <option value="6 SSES - DR. JOSE P. RIZAL">6 SSES - DR. JOSE P. RIZAL</option>
+            <option value="6 - MARCELO H. DEL PILAR">6 - MARCELO H. DEL PILAR</option>
+            <option value="6 - JOSE ABAD SANTOS">6 - JOSE ABAD SANTOS</option>
+            <option value="6 - APOLINARIO MABINI">6 - APOLINARIO MABINI</option>
+            <option value="6 - MARIANO PONCE">6 - MARIANO PONCE</option>
+            <option value="6 - JOSEFA LLANES ESCODA">6 - JOSEFA LLANES ESCODA</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Quiz code</label>
+          <input type="text" id="stCode" placeholder="ABC123" style="text-transform:uppercase; letter-spacing:2px; font-family:var(--font-mono);">
+        </div>
+        <div class="field">
+          <label>Sound &amp; speech</label>
+          <div class="checkline">
+            <input type="checkbox" id="stSoundEnabled" checked onchange="setSoundEnabled(this.checked)">
+            <span>🔊 Sound effects (clicks, timer, results)</span>
+          </div>
+          <div class="checkline">
+            <input type="checkbox" id="stAutoSpeech" onchange="setAutoSpeech(this.checked)">
+            <span>🗣️ Read questions aloud automatically</span>
+          </div>
+          <div class="field" style="margin-top:8px; margin-bottom:0;">
+            <label>Read-aloud language</label>
+            <select id="stSpeechLang" onchange="setSpeechLang(this.value)">
+              <option value="en">English</option>
+              <option value="fil">Filipino / Tagalog</option>
+            </select>
+          </div>
+        </div>
+        <button class="btn btn-primary btn-block" onclick="startStudentQuiz()">Continue</button>
+        <div class="btn-row"><button class="link-btn" onclick="goHome()">← Back</button></div>
+      </div>
+    </div>
+
+    <!-- ============ STUDENT QUIZ TAKING ============ -->
+    <div class="screen" id="screen-student-quiz">
+      <div class="card">
+        <div class="quiz-header">
+          <div>
+            <p class="eyebrow" id="stuSubject"></p>
+            <div class="qtitle" id="stuTitle"></div>
+          </div>
+          <div class="timer-pill" id="timerPill">--:--</div>
+        </div>
+        <div class="quiz-audio-bar" style="display:flex; gap:8px; align-items:center; flex-wrap:wrap; margin:2px 0 14px;">
+          <button class="btn btn-ghost btn-sm" id="quizSoundToggleBtn" onclick="toggleSoundDuringQuiz()" title="Toggle sound effects">🔊</button>
+          <button class="btn btn-ghost btn-sm" onclick="speakCurrentQuestion()">🗣️ Read aloud</button>
+          <select id="quizSpeechLangSelect" onchange="setSpeechLang(this.value)" style="width:auto; padding:7px 10px; font-size:13px; border:1.5px solid var(--line); border-radius:var(--radius-sm);">
+            <option value="en">English</option>
+            <option value="fil">Filipino / Tagalog</option>
+          </select>
+        </div>
+        <div class="progress-label" id="progressLabel">Question 1 of 1</div>
+        <div class="progress-track"><div class="progress-fill" id="progressFill" style="width:0%;"></div></div>
+        <div class="question-text" id="questionText"></div>
+        <div id="choicesWrap"></div>
+        <div class="quiz-footer">
+          <button class="btn btn-primary" id="nextBtn" onclick="submitAnswerAndAdvance()" disabled>Next</button>
+        </div>
+        <div class="no-back-note">Answers are saved automatically as you go. You can't return to a previous question.</div>
+      </div>
+    </div>
+
+    <!-- ============ STUDENT RESULT ============ -->
+    <div class="screen" id="screen-student-result">
+      <div class="card result-card">
+        <div class="result-tag" id="resultTag">Result</div>
+        <p class="eyebrow" id="resultQuizTitle"></p>
+        <div class="result-score" id="resultPercentage">0%</div>
+        <div class="result-stats">
+          <div><div class="num" id="resultCorrect">0/0</div><div class="lab">Correct</div></div>
+          <div><div class="num" id="resultDuration">0:00</div><div class="lab">Time used</div></div>
+          <div><div class="num" id="resultPassing">60%</div><div class="lab">Passing score</div></div>
+        </div>
+        <div class="btn-row" style="justify-content:center; margin-top:30px;">
+          <button class="btn btn-primary" onclick="finishStudentSession()">Done</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+/* =========================================================================
+   CONFIGURATION — paste your deployed Apps Script Web App URL below.
+   ========================================================================= */
+const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwjxIarwzwkBuf0Ai75uZkvAV_E2tin5un3asC-nhOqJDCssIvZFMo0eAEwzjrVwSRR/exec';
+
+/* =========================================================================
+   STATE
+   ========================================================================= */
+let teacherPassword = null;
+let editingQuizCode = null;   // null = creating new quiz
+let currentQuestions = [];    // array of {qid, text, choices:[{cid,text}], correctCid}
+let currentSubs = [];         // last fetched submissions, for CSV export
+let currentSubsQuizCode = '';
+let geminiApiKey = null;      // loaded from localStorage; used for direct client-side Gemini calls
+let websiteUrl = null;        // loaded from localStorage; GitHub Pages (or other host) URL used to build student links
+let soundEnabled = true;      // loaded from localStorage; toggles short UI sound effects for students
+let autoSpeechEnabled = false;// loaded from localStorage; auto-reads each question aloud for students
+let speechLang = 'en';        // loaded from localStorage; 'en' (English) or 'fil' (Filipino/Tagalog)
+let sharedAudioCtx = null;    // lazily-created Web Audio context, reused for all sound effects
+let aiReferenceText = '';     // extracted plain text from a teacher-uploaded reference file (docx/pdf), used to ground AI question generation
+let aiReferenceFileName = ''; // display name of the currently attached reference file
+let pdfJsLoadPromise = null;  // memoized promise for lazy-loading pdf.js (only needed if a PDF reference is uploaded)
+
+const student = {
+  name: '', section: '', quizCode: '',
+  quiz: null,          // {quizCode,title,subject,timerMinutes,passingScore,questions:[...]}
+  order: [],           // array of qids in display order
+  answers: {},          // qid -> cid
+  currentIndex: 0,
+  startTime: null,
+  endTimestamp: null,
+  timerHandle: null,
+  submitted: false
+};
+
+/* =========================================================================
+   API HELPER
+   ========================================================================= */
+function setLoading(on){
+  document.getElementById('loadingOverlay').classList.toggle('show', !!on);
+}
+
+async function api(action, payload){
+  if(!SCRIPT_URL || SCRIPT_URL.indexOf('YOUR_DEPLOYED') === 0){
+    throw new Error('The app is not connected to a backend yet. Set SCRIPT_URL in the HTML file.');
+  }
+  setLoading(true);
+  try{
+    const res = await fetch(SCRIPT_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({ action, payload: payload || {} })
+    });
+    const data = await res.json();
+    return data;
+  } catch(err){
+    return { success:false, message: 'Network error: ' + err.message };
+  } finally{
+    setLoading(false);
+  }
+}
+
+/* =========================================================================
+   NAVIGATION
+   ========================================================================= */
+function showScreen(id){
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  window.scrollTo(0,0);
+  renderTopbar(id);
+}
+
+function renderTopbar(id){
+  const el = document.getElementById('topbarActions');
+  el.innerHTML = '';
+  if(id.startsWith('screen-teacher') || id === 'screen-submissions' || id === 'screen-share-link'){
+    if(teacherPassword){
+      const b = document.createElement('button');
+      b.className = 'pill-btn';
+      b.textContent = 'Log out';
+      b.onclick = teacherLogout;
+      el.appendChild(b);
+    }
+  }
+}
+
+function goHome(){
+  stopSpeech();
+  showScreen('screen-home');
+}
+
+/* =========================================================================
+   TEACHER: SHARE QUIZ LINK
+   Builds a link that opens this same page directly to the student join
+   screen with the quiz code pre-filled, so the teacher can share a link
+   instead of sending the HTML file itself.
+   ========================================================================= */
+function buildStudentShareLink(quizCode){
+  const base = getShareLinkBase();
+  return base + '?mode=student&code=' + encodeURIComponent(quizCode);
+}
+
+/* Returns the base URL to build student links from: the saved Website URL
+   (e.g. a GitHub Pages address) when one has been configured in Teacher
+   Settings, otherwise the current page's own location (previous behavior). */
+function getShareLinkBase(){
+  if(websiteUrl){
+    let base = websiteUrl.trim();
+    // If the saved URL points at a folder (e.g. https://user.github.io/quiz-app/
+    // or without a trailing slash), make sure it resolves to this HTML file.
+    if(!/\.[a-zA-Z0-9]+$/.test(base.split('/').pop())){
+      if(!base.endsWith('/')) base += '/';
+      const page = location.pathname.split('/').pop() || 'index.html';
+      base += page;
+    }
+    return base;
+  }
+  return location.origin + location.pathname;
+}
+
+function showShareLink(quizCode, title){
+  document.getElementById('shareLinkTitle').textContent = title ? ('"' + title + '" is ready to share') : 'Share with your students';
+  document.getElementById('shareLinkCode').textContent = quizCode;
+  document.getElementById('shareLinkBox').value = buildStudentShareLink(quizCode);
+  document.getElementById('shareLinkMsg').classList.remove('show');
+  const warning = document.getElementById('shareLinkWarning');
+  if(location.protocol === 'file:' && !websiteUrl){
+    warning.textContent = '⚠️ You\'re opening this file directly on your computer, so this link will only work on THIS device. To make it open correctly for students on their phones (e.g. from Messenger), upload this HTML file to GitHub Pages (or a host like Netlify Drop at app.netlify.com/drop), then paste that URL into the "Website URL" setting on your dashboard.';
+    warning.classList.add('show');
+  } else {
+    warning.classList.remove('show');
+  }
+  showScreen('screen-share-link');
+}
+
+function copyShareLink(){
+  const box = document.getElementById('shareLinkBox');
+  const msg = document.getElementById('shareLinkMsg');
+  const finish = (ok, text) => { if(msg){ msg.textContent = text; msg.className = 'msg ' + (ok?'msg-ok':'msg-error') + ' show'; } };
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(box.value).then(
+      () => finish(true, 'Link copied! Paste it into Messenger, email, Google Classroom, etc.'),
+      () => { box.select(); finish(true, 'Link selected — press Ctrl+C (or Cmd+C) to copy.'); }
+    );
+  } else {
+    box.select();
+    finish(true, 'Link selected — press Ctrl+C (or Cmd+C) to copy.');
+  }
+}
+
+function enterTeacherMode(){
+  if(teacherPassword){
+    showScreen('screen-teacher-dashboard');
+    loadQuizzes();
+  } else {
+    document.getElementById('loginMsg').classList.remove('show');
+    document.getElementById('teacherPasswordInput').value = '';
+    showScreen('screen-teacher-login');
+  }
+}
+
+function enterStudentMode(){
+  stopSpeech();
+  showScreen('screen-student-entry');
+}
+
+/* After a student finishes (and sees) their result, "Done" should take them
+   straight back to the student join screen only — never to the role-select
+   landing page (which also offers the Teacher option). This clears their
+   previous entry so the next pupil starts fresh, but leaves any pre-filled
+   /locked quiz code (from a shared link) exactly as handleIncomingShareLink
+   set it up. */
+function finishStudentSession(){
+  stopSpeech();
+  const lastName = document.getElementById('stLastName');
+  const firstName = document.getElementById('stFirstName');
+  const middleName = document.getElementById('stMiddleName');
+  const section = document.getElementById('stSection');
+  const codeInput = document.getElementById('stCode');
+  const msg = document.getElementById('studentMsg');
+  if(lastName) lastName.value = '';
+  if(firstName) firstName.value = '';
+  if(middleName) middleName.value = '';
+  if(section) section.value = '';
+  if(msg) msg.classList.remove('show');
+  // Only clear the quiz code if it isn't locked from an incoming share link
+  // (readOnly + prefilled means the pupil arrived via a per-quiz link and
+  // should keep seeing that same code for their next attempt, if any).
+  if(codeInput && !codeInput.readOnly) codeInput.value = '';
+  showScreen('screen-student-entry');
+}
+
+function teacherLogout(){
+  teacherPassword = null;
+  goHome();
+}
+
+/* =========================================================================
+   TEACHER: LOGIN
+   ========================================================================= */
+async function doTeacherLogin(){
+  const pw = document.getElementById('teacherPasswordInput').value;
+  const msg = document.getElementById('loginMsg');
+  msg.classList.remove('show');
+  if(!pw){ msg.textContent = 'Enter your password.'; msg.classList.add('show'); return; }
+  const res = await api('teacherLogin', { password: pw });
+  if(res.success){
+    teacherPassword = pw;
+    showScreen('screen-teacher-dashboard');
+    loadQuizzes();
+  } else {
+    msg.textContent = res.message || 'Incorrect password.';
+    msg.classList.add('show');
+  }
+}
+
+/* =========================================================================
+   TEACHER: DASHBOARD
+   ========================================================================= */
+async function loadQuizzes(){
+  const wrap = document.getElementById('quizList');
+  wrap.innerHTML = '<div class="empty-state">Loading…</div>';
+  const res = await api('listQuizzes', { password: teacherPassword });
+  if(!res.success){
+    wrap.innerHTML = '<div class="empty-state">'+escapeHtml(res.message || 'Could not load quizzes.')+'</div>';
+    return;
+  }
+  if(!res.quizzes.length){
+    wrap.innerHTML = '<div class="empty-state"><div class="big">🗂️</div>No quizzes yet. Create your first one.</div>';
+    return;
+  }
+  wrap.innerHTML = '';
+  const now = new Date();
+  res.quizzes.forEach(q => {
+    let openState = 'open', label = 'Open';
+    if(q.openDateTime && now < new Date(q.openDateTime)){ openState='closed'; label='Scheduled'; }
+    if(q.closeDateTime && now > new Date(q.closeDateTime)){ openState='closed'; label='Closed'; }
+    const row = document.createElement('div');
+    row.className = 'quiz-row';
+    row.innerHTML = `
+      <div class="info">
+        <div class="title">${escapeHtml(q.title)}</div>
+        <div class="meta">${escapeHtml(q.subject||'—')} · ${q.questionCount} question${q.questionCount==1?'':'s'} · ${q.timerMinutes} min · Pass ${q.passingScore}%</div>
+        <div style="margin-top:4px; display:flex; gap:8px; align-items:center;">
+          <span class="code-chip">${escapeHtml(q.quizCode)}</span>
+          <span class="status-badge ${openState}">${label}</span>
+        </div>
+      </div>
+      <div class="btn-row" style="margin-top:0;">
+        <button class="btn btn-primary btn-sm" data-act="share">🔗 Share</button>
+        <button class="btn btn-ghost btn-sm" data-act="subs">View submissions</button>
+        <button class="btn btn-ghost btn-sm" data-act="edit">Edit</button>
+        <button class="btn btn-danger btn-sm" data-act="del">Delete</button>
+      </div>
+    `;
+    row.querySelector('[data-act="share"]').onclick = () => showShareLink(q.quizCode, q.title);
+    row.querySelector('[data-act="subs"]').onclick = () => openSubmissions(q.quizCode, q.title);
+    row.querySelector('[data-act="edit"]').onclick = () => openQuizEditor(q.quizCode);
+    row.querySelector('[data-act="del"]').onclick = () => deleteQuizConfirm(q.quizCode, q.title);
+    wrap.appendChild(row);
+  });
+}
+
+async function deleteQuizConfirm(code, title){
+  if(!confirm('Delete "'+title+'" ('+code+')? This cannot be undone. Its submissions sheet will also be deleted.')) return;
+  const res = await api('deleteQuiz', { password: teacherPassword, quizCode: code });
+  if(res.success){ loadQuizzes(); } else { alert(res.message || 'Could not delete quiz.'); }
+}
+
+/* =========================================================================
+   TEACHER: QUIZ EDITOR
+   ========================================================================= */
+function toDatetimeLocalValue(v){
+  if(!v) return '';
+  const d = new Date(v);
+  if(isNaN(d)) return '';
+  const pad = n => String(n).padStart(2,'0');
+  return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate())+'T'+pad(d.getHours())+':'+pad(d.getMinutes());
+}
+
+async function openQuizEditor(quizCode){
+  document.getElementById('editorMsg').classList.remove('show');
+  editingQuizCode = quizCode;
+  currentQuestions = [];
+  resetAIGeneratorFields();
+
+  if(quizCode){
+    document.getElementById('editorEyebrow').textContent = 'Edit Quiz';
+    document.getElementById('editorTitle').textContent = 'Edit quiz';
+    showScreen('screen-quiz-editor');
+    const res = await api('getQuizFull', { password: teacherPassword, quizCode });
+    if(!res.success){ alert(res.message||'Could not load quiz.'); showScreen('screen-teacher-dashboard'); loadQuizzes(); return; }
+    const q = res.quiz;
+    document.getElementById('qTitle').value = q.title || '';
+    document.getElementById('qSubject').value = q.subject || '';
+    document.getElementById('qCode').value = q.quizCode || '';
+    document.getElementById('qCode').disabled = true;
+    document.getElementById('qTimer').value = q.timerMinutes || 15;
+    document.getElementById('qPassing').value = q.passingScore || 60;
+    document.getElementById('qOpen').value = toDatetimeLocalValue(q.openDateTime);
+    document.getElementById('qClose').value = toDatetimeLocalValue(q.closeDateTime);
+    document.getElementById('qRandQ').checked = !!q.randomizeQuestions;
+    document.getElementById('qRandC').checked = !!q.randomizeChoices;
+    document.getElementById('qOneAttempt').checked = !!q.oneAttempt;
+    currentQuestions = q.questions || [];
+    renderQuestions();
+  } else {
+    document.getElementById('editorEyebrow').textContent = 'New Quiz';
+    document.getElementById('editorTitle').textContent = 'Create a quiz';
+    document.getElementById('qTitle').value = '';
+    document.getElementById('qSubject').value = '';
+    document.getElementById('qCode').value = '';
+    document.getElementById('qCode').disabled = false;
+    document.getElementById('qTimer').value = 15;
+    document.getElementById('qPassing').value = 60;
+    document.getElementById('qOpen').value = '';
+    document.getElementById('qClose').value = '';
+    document.getElementById('qRandQ').checked = true;
+    document.getElementById('qRandC').checked = true;
+    document.getElementById('qOneAttempt').checked = true;
+    currentQuestions = [];
+    renderQuestions();
+    showScreen('screen-quiz-editor');
+  }
+}
+
+function newQid(){ return 'q_' + Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
+
+function addQuestion(){
+  if(currentQuestions.length >= 50) return;
+  const qid = newQid();
+  currentQuestions.push({
+    qid, text: '',
+    choices: [
+      { cid: qid+'_c1', text: '' },
+      { cid: qid+'_c2', text: '' },
+      { cid: qid+'_c3', text: '' },
+      { cid: qid+'_c4', text: '' }
+    ],
+    correctCid: qid+'_c1'
+  });
+  renderQuestions();
+}
+
+function removeQuestion(qid){
+  currentQuestions = currentQuestions.filter(q => q.qid !== qid);
+  renderQuestions();
+}
+
+function renderQuestions(){
+  const wrap = document.getElementById('questionsWrap');
+  wrap.innerHTML = '';
+  currentQuestions.forEach((q, idx) => {
+    const card = document.createElement('div');
+    card.className = 'q-card';
+    let choicesHtml = '';
+    const letters = ['A','B','C','D'];
+    q.choices.forEach((c, ci) => {
+      choicesHtml += `
+        <div class="choice-row">
+          <input type="radio" name="correct_${q.qid}" ${c.cid===q.correctCid?'checked':''} onchange="setCorrect('${q.qid}','${c.cid}')">
+          <span class="choice-letter">${letters[ci]}</span>
+          <input type="text" placeholder="Choice ${letters[ci]}" value="${escapeAttr(c.text)}" oninput="setChoiceText('${q.qid}','${c.cid}',this.value)">
+        </div>`;
+    });
+    card.innerHTML = `
+      <div class="q-card-head">
+        <span class="q-num">QUESTION ${idx+1}</span>
+        <button class="btn btn-danger btn-sm" onclick="removeQuestion('${q.qid}')">Remove</button>
+      </div>
+      <div class="field">
+        <textarea rows="2" placeholder="Question text" oninput="setQText('${q.qid}',this.value)">${escapeHtml(q.text)}</textarea>
+      </div>
+      ${choicesHtml}
+      <div class="helper-text" style="margin-top:6px;">Select the radio button next to the correct choice.</div>
+    `;
+    wrap.appendChild(card);
+  });
+  document.getElementById('qCountLabel').textContent = currentQuestions.length + ' / 50 questions';
+  document.getElementById('addQBtn').disabled = currentQuestions.length >= 50;
+}
+
+function findQ(qid){ return currentQuestions.find(q => q.qid === qid); }
+function setQText(qid, val){ const q = findQ(qid); if(q) q.text = val; }
+function setChoiceText(qid, cid, val){ const q = findQ(qid); if(!q) return; const c = q.choices.find(c=>c.cid===cid); if(c) c.text = val; }
+function setCorrect(qid, cid){ const q = findQ(qid); if(q) q.correctCid = cid; }
+
+/* =========================================================================
+   AI SETTINGS: Gemini API key (stored client-side, used for direct calls)
+   ========================================================================= */
+const GEMINI_KEY_STORAGE = 'oqs_gemini_api_key';
+
+function initGeminiKeyUI(){
+  geminiApiKey = localStorage.getItem(GEMINI_KEY_STORAGE) || null;
+  const input = document.getElementById('geminiKeyInput');
+  if(!input) return;
+  const saveBtn = document.getElementById('geminiSaveBtn');
+  const editBtn = document.getElementById('geminiEditBtn');
+  const clearBtn = document.getElementById('geminiClearBtn');
+  const msg = document.getElementById('geminiKeyMsg');
+  msg.classList.remove('show');
+  if(geminiApiKey){
+    input.value = geminiApiKey;
+    input.disabled = true;
+    saveBtn.classList.add('hidden');
+    editBtn.classList.remove('hidden');
+    clearBtn.classList.remove('hidden');
+  } else {
+    input.value = '';
+    input.disabled = false;
+    saveBtn.classList.remove('hidden');
+    editBtn.classList.add('hidden');
+    clearBtn.classList.add('hidden');
+  }
+}
+
+function saveGeminiKey(){
+  const input = document.getElementById('geminiKeyInput');
+  const msg = document.getElementById('geminiKeyMsg');
+  const val = input.value.trim();
+  if(!val){
+    msg.textContent = 'Please enter a Gemini API key.';
+    msg.className = 'msg msg-error show';
+    return;
+  }
+  localStorage.setItem(GEMINI_KEY_STORAGE, val);
+  geminiApiKey = val;
+  input.disabled = true;
+  document.getElementById('geminiSaveBtn').classList.add('hidden');
+  document.getElementById('geminiEditBtn').classList.remove('hidden');
+  document.getElementById('geminiClearBtn').classList.remove('hidden');
+  msg.textContent = 'Gemini API key saved.';
+  msg.className = 'msg msg-ok show';
+}
+
+function editGeminiKey(){
+  const input = document.getElementById('geminiKeyInput');
+  input.disabled = false;
+  input.focus();
+  document.getElementById('geminiSaveBtn').classList.remove('hidden');
+  document.getElementById('geminiEditBtn').classList.add('hidden');
+  document.getElementById('geminiKeyMsg').classList.remove('show');
+}
+
+function clearGeminiKey(){
+  if(!confirm('Remove the saved Gemini API key from this browser?')) return;
+  localStorage.removeItem(GEMINI_KEY_STORAGE);
+  geminiApiKey = null;
+  const input = document.getElementById('geminiKeyInput');
+  input.value = '';
+  input.disabled = false;
+  document.getElementById('geminiSaveBtn').classList.remove('hidden');
+  document.getElementById('geminiEditBtn').classList.add('hidden');
+  document.getElementById('geminiClearBtn').classList.add('hidden');
+  const msg = document.getElementById('geminiKeyMsg');
+  msg.textContent = 'Gemini API key removed.';
+  msg.className = 'msg msg-ok show';
+}
+
+/* =========================================================================
+   TEACHER SETTINGS: Website URL (stored client-side, used to build student
+   share links so they work when hosted on GitHub Pages instead of file://)
+   ========================================================================= */
+const WEBSITE_URL_STORAGE = 'oqs_website_url';
+
+function initWebsiteUrlUI(){
+  websiteUrl = localStorage.getItem(WEBSITE_URL_STORAGE) || null;
+  const input = document.getElementById('websiteUrlInput');
+  if(!input) return;
+  const saveBtn = document.getElementById('websiteUrlSaveBtn');
+  const editBtn = document.getElementById('websiteUrlEditBtn');
+  const clearBtn = document.getElementById('websiteUrlClearBtn');
+  const msg = document.getElementById('websiteUrlMsg');
+  msg.classList.remove('show');
+  if(websiteUrl){
+    input.value = websiteUrl;
+    input.disabled = true;
+    saveBtn.classList.add('hidden');
+    editBtn.classList.remove('hidden');
+    clearBtn.classList.remove('hidden');
+  } else {
+    input.value = '';
+    input.disabled = false;
+    saveBtn.classList.remove('hidden');
+    editBtn.classList.add('hidden');
+    clearBtn.classList.add('hidden');
+  }
+}
+
+function saveWebsiteUrl(){
+  const input = document.getElementById('websiteUrlInput');
+  const msg = document.getElementById('websiteUrlMsg');
+  let val = input.value.trim();
+  if(!val){
+    msg.textContent = 'Please enter your website URL (e.g. https://username.github.io/quiz-app/).';
+    msg.className = 'msg msg-error show';
+    return;
+  }
+  if(!/^https?:\/\//i.test(val)){
+    msg.textContent = 'Please include the protocol, e.g. https://username.github.io/quiz-app/';
+    msg.className = 'msg msg-error show';
+    return;
+  }
+  localStorage.setItem(WEBSITE_URL_STORAGE, val);
+  websiteUrl = val;
+  input.disabled = true;
+  document.getElementById('websiteUrlSaveBtn').classList.add('hidden');
+  document.getElementById('websiteUrlEditBtn').classList.remove('hidden');
+  document.getElementById('websiteUrlClearBtn').classList.remove('hidden');
+  msg.textContent = 'Website URL saved. Student links will now use this address.';
+  msg.className = 'msg msg-ok show';
+}
+
+function editWebsiteUrl(){
+  const input = document.getElementById('websiteUrlInput');
+  input.disabled = false;
+  input.focus();
+  document.getElementById('websiteUrlSaveBtn').classList.remove('hidden');
+  document.getElementById('websiteUrlEditBtn').classList.add('hidden');
+  document.getElementById('websiteUrlMsg').classList.remove('show');
+}
+
+function clearWebsiteUrl(){
+  if(!confirm('Remove the saved Website URL from this browser? Student links will fall back to this page\'s current address.')) return;
+  localStorage.removeItem(WEBSITE_URL_STORAGE);
+  websiteUrl = null;
+  const input = document.getElementById('websiteUrlInput');
+  input.value = '';
+  input.disabled = false;
+  document.getElementById('websiteUrlSaveBtn').classList.remove('hidden');
+  document.getElementById('websiteUrlEditBtn').classList.add('hidden');
+  document.getElementById('websiteUrlClearBtn').classList.add('hidden');
+  const msg = document.getElementById('websiteUrlMsg');
+  msg.textContent = 'Website URL removed.';
+  msg.className = 'msg msg-ok show';
+}
+
+/* Copies a generic student join link (no quiz code) built from the saved
+   Website URL, so a teacher can quickly test/share the base join page.
+   Quiz-specific links are copied from the "Share with your students" screen
+   via copyShareLink(), which also uses getShareLinkBase(). */
+function copyStudentLink(){
+  const msg = document.getElementById('websiteUrlMsg');
+  const link = getShareLinkBase() + '?mode=student';
+  const finish = (ok, text) => { msg.textContent = text; msg.className = 'msg ' + (ok?'msg-ok':'msg-error') + ' show'; };
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(link).then(
+      () => finish(true, 'Student link copied: ' + link),
+      () => finish(false, 'Could not copy automatically. Link: ' + link)
+    );
+  } else {
+    finish(false, 'Link: ' + link);
+  }
+}
+
+/* =========================================================================
+   STUDENT: SOUND EFFECTS & AUTO-SPEECH (English + Filipino/Tagalog)
+   All sound effects are synthesized on the fly with the Web Audio API, so
+   no audio asset files are needed and everything still works offline or
+   from a file:// URL. Question read-aloud uses the browser's built-in
+   Web Speech API (SpeechSynthesis) — no server or files required either.
+   ========================================================================= */
+const SOUND_ENABLED_STORAGE = 'oqs_sound_enabled';
+const AUTOSPEECH_ENABLED_STORAGE = 'oqs_autospeech_enabled';
+const SPEECH_LANG_STORAGE = 'oqs_speech_lang';
+
+function initAudioPrefsUI(){
+  const soundStored = localStorage.getItem(SOUND_ENABLED_STORAGE);
+  soundEnabled = soundStored === null ? true : soundStored === '1';
+  autoSpeechEnabled = localStorage.getItem(AUTOSPEECH_ENABLED_STORAGE) === '1';
+  speechLang = localStorage.getItem(SPEECH_LANG_STORAGE) || 'en';
+
+  const soundBox = document.getElementById('stSoundEnabled');
+  if(soundBox) soundBox.checked = soundEnabled;
+  const speechBox = document.getElementById('stAutoSpeech');
+  if(speechBox) speechBox.checked = autoSpeechEnabled;
+  const langSelects = [document.getElementById('stSpeechLang'), document.getElementById('quizSpeechLangSelect')];
+  langSelects.forEach(sel => { if(sel) sel.value = speechLang; });
+  updateSoundToggleIcons();
+
+  // Some browsers load their voice list asynchronously; nothing to do here
+  // besides letting it finish — pickVoiceForLang() re-reads it on demand.
+  if('speechSynthesis' in window){
+    window.speechSynthesis.onvoiceschanged = () => {};
+  }
+}
+
+function setSoundEnabled(val){
+  soundEnabled = !!val;
+  localStorage.setItem(SOUND_ENABLED_STORAGE, soundEnabled ? '1' : '0');
+  const soundBox = document.getElementById('stSoundEnabled');
+  if(soundBox) soundBox.checked = soundEnabled;
+  updateSoundToggleIcons();
+  if(soundEnabled) playClickSound();
+}
+
+function toggleSoundDuringQuiz(){
+  setSoundEnabled(!soundEnabled);
+}
+
+function updateSoundToggleIcons(){
+  const btn = document.getElementById('quizSoundToggleBtn');
+  if(btn) btn.textContent = soundEnabled ? '🔊' : '🔇';
+}
+
+function setAutoSpeech(val){
+  autoSpeechEnabled = !!val;
+  localStorage.setItem(AUTOSPEECH_ENABLED_STORAGE, autoSpeechEnabled ? '1' : '0');
+  const speechBox = document.getElementById('stAutoSpeech');
+  if(speechBox) speechBox.checked = autoSpeechEnabled;
+  if(autoSpeechEnabled) speakCurrentQuestion();
+  else stopSpeech();
+}
+
+function setSpeechLang(val){
+  speechLang = (val === 'fil') ? 'fil' : 'en';
+  localStorage.setItem(SPEECH_LANG_STORAGE, speechLang);
+  const langSelects = [document.getElementById('stSpeechLang'), document.getElementById('quizSpeechLangSelect')];
+  langSelects.forEach(sel => { if(sel) sel.value = speechLang; });
+  // If a question is currently on screen and auto-speech (or a manual replay)
+  // was already used, re-read it in the newly chosen language.
+  if(document.getElementById('screen-student-quiz').classList.contains('active')){
+    speakCurrentQuestion();
+  }
+}
+
+/* ---------- Sound effects (Web Audio API, no files needed) ---------- */
+function getAudioCtx(){
+  const AC = window.AudioContext || window.webkitAudioContext;
+  if(!AC) return null;
+  if(!sharedAudioCtx) sharedAudioCtx = new AC();
+  if(sharedAudioCtx.state === 'suspended') sharedAudioCtx.resume();
+  return sharedAudioCtx;
+}
+
+function playTone(freq, durationMs, type, volume){
+  if(!soundEnabled) return;
+  try{
+    const ctx = getAudioCtx();
+    if(!ctx) return;
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = type || 'sine';
+    osc.frequency.value = freq;
+    const vol = volume == null ? 0.15 : volume;
+    const now = ctx.currentTime;
+    gain.gain.setValueAtTime(vol, now);
+    gain.gain.exponentialRampToValueAtTime(0.0001, now + durationMs / 1000);
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.start(now);
+    osc.stop(now + durationMs / 1000 + 0.03);
+  } catch(e){ /* ignore — unsupported browser or blocked audio */ }
+}
+
+function playClickSound(){ playTone(520, 80, 'sine', 0.10); }
+function playSelectSound(){ playTone(660, 100, 'sine', 0.13); }
+function playNextSound(){
+  playTone(740, 90, 'triangle', 0.11);
+  setTimeout(() => playTone(880, 100, 'triangle', 0.11), 90);
+}
+function playTimeWarningSound(){
+  playTone(880, 130, 'square', 0.12);
+  setTimeout(() => playTone(880, 130, 'square', 0.12), 220);
+}
+function playTimeUpSound(){ playTone(300, 200, 'sawtooth', 0.14); setTimeout(() => playTone(200, 350, 'sawtooth', 0.14), 200); }
+function playSubmitSound(){
+  playTone(523, 90, 'sine', 0.12);
+  setTimeout(() => playTone(659, 90, 'sine', 0.12), 100);
+  setTimeout(() => playTone(784, 140, 'sine', 0.12), 200);
+}
+function playResultSound(passed){
+  if(passed){
+    playTone(523, 110, 'sine', 0.13);
+    setTimeout(() => playTone(659, 110, 'sine', 0.13), 120);
+    setTimeout(() => playTone(784, 220, 'sine', 0.13), 240);
+  } else {
+    playTone(392, 180, 'sine', 0.12);
+    setTimeout(() => playTone(311, 260, 'sine', 0.12), 190);
+  }
+}
+
+/* ---------- Auto-speech / read-aloud (Web Speech API) ---------- */
+function getSpeechLangCode(lang){ return lang === 'fil' ? 'fil-PH' : 'en-US'; }
+
+function pickVoiceForLang(lang){
+  if(!('speechSynthesis' in window)) return null;
+  const voices = window.speechSynthesis.getVoices() || [];
+  if(!voices.length) return null;
+  // Filipino voices are commonly tagged 'fil-PH' or, on some platforms, the
+  // older 'tl-PH' (Tagalog) code — try both before giving up and falling
+  // back to the browser's default voice.
+  const candidates = lang === 'fil'
+    ? ['fil-ph', 'fil', 'tl-ph', 'tl']
+    : ['en-us', 'en-ph', 'en-gb', 'en-au', 'en'];
+  for(const cand of candidates){
+    const match = voices.find(v => v.lang && v.lang.toLowerCase().replace('_', '-').startsWith(cand));
+    if(match) return match;
+  }
+  return null;
+}
+
+function speakText(text, lang){
+  if(!('speechSynthesis' in window) || !text) return;
+  try{
+    window.speechSynthesis.cancel(); // stop anything already being read
+    const utter = new SpeechSynthesisUtterance(text);
+    const langCode = getSpeechLangCode(lang);
+    utter.lang = langCode;
+    utter.rate = 0.95;
+    const voice = pickVoiceForLang(lang);
+    if(voice) utter.voice = voice;
+    window.speechSynthesis.speak(utter);
+  } catch(e){ /* ignore — unsupported browser */ }
+}
+
+function stopSpeech(){
+  if('speechSynthesis' in window){
+    try{ window.speechSynthesis.cancel(); } catch(e){ /* ignore */ }
+  }
+}
+
+/* Builds the spoken script for a question: the question text, then each
+   choice announced as "A. ...", "B. ...", etc. */
+function buildSpeechTextForQuestion(q){
+  const letters = ['A','B','C','D','E','F'];
+  const parts = [q.text];
+  q.choices.forEach((c, ci) => {
+    parts.push((letters[ci] || '') + '. ' + c.text);
+  });
+  return parts.join('. ');
+}
+
+function speakCurrentQuestion(){
+  if(!student.quiz) return;
+  const qid = student.order[student.currentIndex];
+  const q = student.quiz.questions.find(qq => qq.qid === qid);
+  if(!q) return;
+  speakText(buildSpeechTextForQuestion(q), speechLang);
+}
+
+/* =========================================================================
+   AI: Direct Gemini multiple-choice question generation
+   (Runs entirely in the browser using the teacher's own saved API key.)
+   ========================================================================= */
+const GEMINI_MODEL_FALLBACK_CHAIN = ['gemini-flash-latest', 'gemini-2.5-flash', 'gemini-2.5-flash-lite', 'gemini-2.5-pro'];
+
+function buildAIQuestionsPrompt({ topic, subject, difficulty, count, referenceText, competencies }){
+  let p = 'You are helping a Filipino public school teacher create ' + count + ' multiple-choice quiz questions';
+  if(topic) p += ' about the topic: "' + topic + '"';
+  if(subject) p += ' for the subject "' + subject + '"';
+  p += '. Difficulty level: ' + difficulty + '.\n';
+
+  if(competencies){
+    p += '\nThe questions MUST be specific to these learning competencies/objectives — do not test knowledge outside of what they cover:\n"""\n' + competencies + '\n"""\n';
+  }
+
+  if(referenceText){
+    p += '\nHere is reference material (from a document the teacher uploaded) to base the questions on:\n"""\n' + referenceText + '\n"""\n';
+    p += '\nInstructions for using the reference material:\n';
+    p += '- Base as many questions as possible directly on facts, definitions, examples, and explanations found in this reference material.\n';
+    p += '- If the reference material does not contain enough distinct content to cover all ' + count + ' questions without repeating the same fact, you may create additional questions on your own — but they must stay strictly within the same topic/subject/competencies as the reference material. Do NOT introduce concepts, examples, or subtopics that are not implied by the reference material, the topic, or the competencies above.\n';
+    p += '- Never go noticeably beyond the scope of the reference material and the stated topic/competencies.\n';
+  } else if(!topic && !competencies){
+    p += '\nNo topic, reference material, or competencies were given — infer a sensible, generally useful topic for the given subject and difficulty.\n';
+  }
+
+  p += '\nEach question must have exactly 4 answer choices, with exactly one correct answer.\n';
+  p += 'Return ONLY a JSON array of exactly ' + count + ' objects, each shaped like:\n';
+  p += '{"text": "the question text", "choices": ["choice 1","choice 2","choice 3","choice 4"], "correctIndex": 0}\n';
+  p += '"correctIndex" is the zero-based index (0-3) of the correct choice within the "choices" array.\n';
+  p += 'Do not include any explanation, markdown formatting, or text outside the JSON array.';
+  return p;
+}
+
+async function callGeminiModel(model, prompt, schema){
+  let res, data;
+  try{
+    res = await fetch('https://generativelanguage.googleapis.com/v1beta/models/' + encodeURIComponent(model) + ':generateContent?key=' + encodeURIComponent(geminiApiKey), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        contents: [{ role: 'user', parts: [{ text: prompt }] }],
+        generationConfig: {
+          temperature: 0.7,
+          responseMimeType: 'application/json',
+          responseSchema: schema
+        }
+      })
+    });
+  }catch(networkErr){
+    const e = new Error('Network error: could not reach Gemini. Please check your internet connection and try again.');
+    e.modelUnavailable = false;
+    throw e;
+  }
+  try{ data = await res.json(); } catch(e){ data = null; }
+  if(!res.ok){
+    const apiMsg = (data && data.error && data.error.message) || '';
+    let message, modelUnavailable = false, reason = 'other';
+    if(res.status === 400 && /API key not valid|API_KEY_INVALID/i.test(apiMsg)){
+      message = 'Your Gemini API key appears to be invalid. Please check it in AI Settings on the dashboard.';
+    } else if(res.status === 401 || res.status === 403){
+      message = 'Your Gemini API key was rejected (unauthorized). Please check it in AI Settings on the dashboard.';
+    } else if(res.status === 429){
+      message = 'Gemini quota or rate limit exceeded for model "' + model + '".';
+      modelUnavailable = true;
+      reason = 'rate_limit';
+    } else if(res.status === 404 || /not found|no longer available/i.test(apiMsg)){
+      message = 'The Gemini model "' + model + '" is unavailable right now.';
+      modelUnavailable = true;
+      reason = 'not_found';
+    } else if(res.status >= 500){
+      message = 'Gemini is temporarily unavailable. Please try again in a moment.';
+      modelUnavailable = true;
+      reason = 'server_error';
+    } else {
+      message = apiMsg || ('Gemini request failed (HTTP ' + res.status + ').');
+    }
+    const e = new Error(message);
+    e.modelUnavailable = modelUnavailable;
+    e.reason = reason;
+    throw e;
+  }
+  const candidates = (data && data.candidates) || [];
+  if(!candidates.length){
+    const blockReason = data && data.promptFeedback && data.promptFeedback.blockReason;
+    const e = new Error(blockReason ? ('Gemini blocked this request (' + blockReason + ').') : 'Gemini returned an empty response. Please try again.');
+    e.modelUnavailable = false;
+    throw e;
+  }
+  const parts = (candidates[0].content && candidates[0].content.parts) || [];
+  const textOut = parts.map(p => p.text || '').join('');
+  if(!textOut.trim()){
+    const e = new Error('Gemini returned an empty response. Please try again.');
+    e.modelUnavailable = false;
+    throw e;
+  }
+  return textOut;
+}
+
+function parseGeminiQuestions(raw, expectedCount){
+  let arr;
+  try{
+    arr = JSON.parse(raw);
+  }catch(e){
+    const match = raw.match(/\[[\s\S]*\]/);
+    arr = null;
+    if(match){
+      try{ arr = JSON.parse(match[0]); } catch(e2){ arr = null; }
+    }
+  }
+  if(!Array.isArray(arr)){
+    throw new Error('The AI returned an unexpected format. Please try again.');
+  }
+  const questions = [];
+  arr.forEach(item => {
+    if(!item || typeof item.text !== 'string' || !item.text.trim() || !Array.isArray(item.choices) || item.choices.length < 2) return;
+    const choicesText = item.choices.slice(0,4).map(c => String(c==null?'':c).trim());
+    while(choicesText.length < 4) choicesText.push('');
+    let correctIndex = parseInt(item.correctIndex, 10);
+    if(isNaN(correctIndex) || correctIndex < 0 || correctIndex >= choicesText.length) correctIndex = 0;
+    const qid = newQid();
+    questions.push({
+      qid,
+      text: item.text.trim(),
+      choices: choicesText.map((t, i) => ({ cid: qid + '_c' + (i+1), text: t })),
+      correctCid: qid + '_c' + (correctIndex+1)
+    });
+  });
+  return questions.slice(0, expectedCount || questions.length);
+}
+
+async function callGeminiForQuestions({ topic, subject, difficulty, count, referenceText, competencies }){
+  const prompt = buildAIQuestionsPrompt({ topic, subject, difficulty, count, referenceText, competencies });
+  const schema = {
+    type: 'ARRAY',
+    items: {
+      type: 'OBJECT',
+      properties: {
+        text: { type: 'STRING' },
+        choices: { type: 'ARRAY', items: { type: 'STRING' } },
+        correctIndex: { type: 'INTEGER' }
+      },
+      required: ['text','choices','correctIndex']
+    }
+  };
+  let lastErr = null;
+  const reasonsSeen = [];
+  for(const model of GEMINI_MODEL_FALLBACK_CHAIN){
+    try{
+      const raw = await callGeminiModel(model, prompt, schema);
+      return parseGeminiQuestions(raw, count);
+    }catch(err){
+      lastErr = err;
+      if(!err.modelUnavailable) throw err;
+      reasonsSeen.push(err.reason || 'other');
+    }
+  }
+  if(reasonsSeen.length){
+    const allRateLimited = reasonsSeen.every(r => r === 'rate_limit');
+    let message;
+    if(allRateLimited){
+      message = 'Gemini rate/quota limit reached on every available model (tried ' + GEMINI_MODEL_FALLBACK_CHAIN.length + '). This usually resets within a minute on the free tier, or check your usage at aistudio.google.com/apikey. Please wait a bit and try again.';
+    } else {
+      message = 'Gemini is not responding right now (tried ' + GEMINI_MODEL_FALLBACK_CHAIN.length + ' models). This is usually a temporary Google outage or rate limit — wait a minute and try again. If it keeps happening, double-check your API key still has access to Gemini models at aistudio.google.com/apikey.';
+    }
+    const e = new Error(message);
+    e.modelUnavailable = true;
+    throw e;
+  }
+  throw lastErr;
+}
+
+/* =========================================================================
+   Word (.docx) import / export
+   Builds and reads real, minimal .docx files using the browser's built-in
+   CompressionStream/DecompressionStream APIs — no external libraries,
+   works fully offline.
+   ========================================================================= */
+
+function crc32(bytes){
+  if(!crc32._table){
+    const table = new Uint32Array(256);
+    for(let n=0; n<256; n++){
+      let c = n;
+      for(let k=0; k<8; k++){ c = (c & 1) ? (0xEDB88320 ^ (c >>> 1)) : (c >>> 1); }
+      table[n] = c >>> 0;
+    }
+    crc32._table = table;
+  }
+  const table = crc32._table;
+  let crc = 0 ^ (-1);
+  for(let i=0; i<bytes.length; i++){
+    crc = (crc >>> 8) ^ table[(crc ^ bytes[i]) & 0xFF];
+  }
+  return (crc ^ (-1)) >>> 0;
+}
+
+async function deflateRawRaw(bytes){
+  const cs = new CompressionStream('deflate-raw');
+  const writer = cs.writable.getWriter();
+  writer.write(bytes);
+  writer.close();
+  return new Uint8Array(await new Response(cs.readable).arrayBuffer());
+}
+
+async function inflateRawRaw(bytes){
+  const ds = new DecompressionStream('deflate-raw');
+  const writer = ds.writable.getWriter();
+  writer.write(bytes);
+  writer.close();
+  return new Uint8Array(await new Response(ds.readable).arrayBuffer());
+}
+
+function docxSupported(){
+  return typeof window.CompressionStream === 'function' && typeof window.DecompressionStream === 'function';
+}
+
+async function buildZip(files){
+  const encoder = new TextEncoder();
+  const localParts = [];
+  const centralParts = [];
+  let offset = 0;
+  for(const f of files){
+    const nameBytes = encoder.encode(f.name);
+    const rawData = f.data;
+    const compData = await deflateRawRaw(rawData);
+    const crc = crc32(rawData);
+    const method = 8;
+
+    const localHeader = new Uint8Array(30 + nameBytes.length);
+    const lv = new DataView(localHeader.buffer);
+    lv.setUint32(0, 0x04034b50, true);
+    lv.setUint16(4, 20, true);
+    lv.setUint16(6, 0, true);
+    lv.setUint16(8, method, true);
+    lv.setUint16(10, 0, true);
+    lv.setUint16(12, 0x21, true);
+    lv.setUint32(14, crc, true);
+    lv.setUint32(18, compData.length, true);
+    lv.setUint32(22, rawData.length, true);
+    lv.setUint16(26, nameBytes.length, true);
+    lv.setUint16(28, 0, true);
+    localHeader.set(nameBytes, 30);
+    localParts.push(localHeader, compData);
+
+    const central = new Uint8Array(46 + nameBytes.length);
+    const cv = new DataView(central.buffer);
+    cv.setUint32(0, 0x02014b50, true);
+    cv.setUint16(4, 20, true);
+    cv.setUint16(6, 20, true);
+    cv.setUint16(8, 0, true);
+    cv.setUint16(10, method, true);
+    cv.setUint16(12, 0, true);
+    cv.setUint16(14, 0x21, true);
+    cv.setUint32(16, crc, true);
+    cv.setUint32(20, compData.length, true);
+    cv.setUint32(24, rawData.length, true);
+    cv.setUint16(28, nameBytes.length, true);
+    cv.setUint16(30, 0, true);
+    cv.setUint16(32, 0, true);
+    cv.setUint16(34, 0, true);
+    cv.setUint16(36, 0, true);
+    cv.setUint32(38, 0, true);
+    cv.setUint32(42, offset, true);
+    central.set(nameBytes, 46);
+    centralParts.push(central);
+
+    offset += localHeader.length + compData.length;
+  }
+
+  const centralStart = offset;
+  const centralSize = centralParts.reduce((s,c) => s + c.length, 0);
+
+  const end = new Uint8Array(22);
+  const ev = new DataView(end.buffer);
+  ev.setUint32(0, 0x06054b50, true);
+  ev.setUint16(4, 0, true);
+  ev.setUint16(6, 0, true);
+  ev.setUint16(8, files.length, true);
+  ev.setUint16(10, files.length, true);
+  ev.setUint32(12, centralSize, true);
+  ev.setUint32(16, centralStart, true);
+  ev.setUint16(20, 0, true);
+
+  return new Blob([...localParts, ...centralParts, end], { type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' });
+}
+
+async function readZipEntry(bytes, entryName){
+  const dv = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+  let eocdOffset = -1;
+  const scanFrom = Math.max(0, bytes.length - 22 - 65536);
+  for(let i = bytes.length - 22; i >= scanFrom; i--){
+    if(dv.getUint32(i, true) === 0x06054b50){ eocdOffset = i; break; }
+  }
+  if(eocdOffset < 0) throw new Error('This does not look like a valid Word (.docx) file.');
+  const entryCount = dv.getUint16(eocdOffset + 10, true);
+  const centralStart = dv.getUint32(eocdOffset + 16, true);
+  const decoder = new TextDecoder();
+  let ptr = centralStart;
+  for(let i=0; i<entryCount; i++){
+    if(dv.getUint32(ptr, true) !== 0x02014b50) break;
+    const method = dv.getUint16(ptr+10, true);
+    const compSize = dv.getUint32(ptr+20, true);
+    const nameLen = dv.getUint16(ptr+28, true);
+    const extraLen = dv.getUint16(ptr+30, true);
+    const commentLen = dv.getUint16(ptr+32, true);
+    const localOffset = dv.getUint32(ptr+42, true);
+    const name = decoder.decode(bytes.subarray(ptr+46, ptr+46+nameLen));
+    if(name === entryName){
+      const lNameLen = dv.getUint16(localOffset+26, true);
+      const lExtraLen = dv.getUint16(localOffset+28, true);
+      const dataStart = localOffset + 30 + lNameLen + lExtraLen;
+      const compData = bytes.subarray(dataStart, dataStart+compSize);
+      if(method === 0) return compData;
+      if(method === 8) return await inflateRawRaw(compData);
+      throw new Error('This Word file uses an unsupported compression method.');
+    }
+    ptr += 46 + nameLen + extraLen + commentLen;
+  }
+  return null;
+}
+
+function escapeXml(s){
+  return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&apos;');
+}
+
+function docxPara(text, opts){
+  opts = opts || {};
+  const bold = opts.bold ? '<w:b/>' : '';
+  const size = opts.size || 24;
+  const spacingAfter = (opts.spacingAfter != null) ? opts.spacingAfter : 120;
+  return '<w:p><w:pPr><w:spacing w:after="'+spacingAfter+'"/></w:pPr>'
+    + '<w:r><w:rPr>'+bold+'<w:sz w:val="'+size+'"/><w:szCs w:val="'+size+'"/></w:rPr>'
+    + '<w:t xml:space="preserve">'+escapeXml(text)+'</w:t></w:r></w:p>';
+}
+
+const DOCX_CONTENT_TYPES_XML = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+  + '<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">'
+  + '<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>'
+  + '<Default Extension="xml" ContentType="application/xml"/>'
+  + '<Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/>'
+  + '</Types>';
+
+const DOCX_RELS_XML = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+  + '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'
+  + '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/>'
+  + '</Relationships>';
+
+async function buildAndDownloadDocx(filename, bodyParagraphsXml){
+  if(!docxSupported()){
+    alert('Your browser does not support creating Word files here. Please update your browser (Chrome, Edge, or Firefox) and try again.');
+    return;
+  }
+  const encoder = new TextEncoder();
+  const documentXml = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+    + '<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:body>'
+    + bodyParagraphsXml
+    + '<w:sectPr><w:pgSz w:w="12240" w:h="15840"/><w:pgMar w:top="1440" w:right="1440" w:bottom="1440" w:left="1440"/></w:sectPr>'
+    + '</w:body></w:document>';
+  const files = [
+    { name: '[Content_Types].xml', data: encoder.encode(DOCX_CONTENT_TYPES_XML) },
+    { name: '_rels/.rels', data: encoder.encode(DOCX_RELS_XML) },
+    { name: 'word/document.xml', data: encoder.encode(documentXml) }
+  ];
+  const blob = await buildZip(files);
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(url), 4000);
+}
+
+async function downloadQuizAsWord(){
+  if(currentQuestions.length === 0){ alert('Add or generate at least one question before downloading.'); return; }
+  const title = document.getElementById('qTitle').value.trim() || 'Untitled Quiz';
+  const subject = document.getElementById('qSubject').value.trim();
+
+  let body = '';
+  body += docxPara(title, { bold:true, size:36, spacingAfter:80 });
+  if(subject) body += docxPara('Subject: ' + subject, { size:22, spacingAfter:80 });
+  body += docxPara('Name: ________________________________     Date: ______________', { size:22, spacingAfter:280 });
+
+  currentQuestions.forEach((q, i) => {
+    body += docxPara((i+1) + '. ' + q.text, { bold:true, size:24, spacingAfter:60 });
+    q.choices.forEach((c, ci) => {
+      body += docxPara('     ' + String.fromCharCode(65+ci) + ') ' + c.text, { size:24, spacingAfter:40 });
+    });
+    body += docxPara('', { size:24, spacingAfter:100 });
+  });
+
+  body += docxPara('Answer Key', { bold:true, size:28, spacingAfter:120 });
+  currentQuestions.forEach((q, i) => {
+    const idx = q.choices.findIndex(c => c.cid === q.correctCid);
+    const letter = idx >= 0 ? String.fromCharCode(65+idx) : '?';
+    body += docxPara((i+1) + '. ' + letter, { size:22, spacingAfter:30 });
+  });
+
+  const safeName = title.replace(/[^a-z0-9\-_ ]/gi, '').trim().replace(/\s+/g, '_') || 'quiz';
+  await buildAndDownloadDocx(safeName + '.docx', body);
+}
+
+async function downloadWordTemplate(){
+  let body = '';
+  body += docxPara('Quiz Question Template', { bold:true, size:36, spacingAfter:120 });
+  body += docxPara('Fill in questions below using this exact format (in Word, Google Docs, or by hand), then use "Upload questions from Word file" back in the quiz editor to import them automatically. Leave one blank line between questions.', { size:22, spacingAfter:220 });
+
+  body += docxPara('Format:', { bold:true, size:22, spacingAfter:60 });
+  body += docxPara('Q1. Your question text here?', { size:22, spacingAfter:20 });
+  body += docxPara('A) First choice', { size:22, spacingAfter:20 });
+  body += docxPara('B) Second choice', { size:22, spacingAfter:20 });
+  body += docxPara('C) Third choice', { size:22, spacingAfter:20 });
+  body += docxPara('D) Fourth choice', { size:22, spacingAfter:20 });
+  body += docxPara('ANSWER: B', { size:22, spacingAfter:220 });
+
+  body += docxPara('Worked example:', { bold:true, size:22, spacingAfter:60 });
+  body += docxPara('Q1. What is the powerhouse of the cell?', { size:22, spacingAfter:20 });
+  body += docxPara('A) Nucleus', { size:22, spacingAfter:20 });
+  body += docxPara('B) Mitochondria', { size:22, spacingAfter:20 });
+  body += docxPara('C) Ribosome', { size:22, spacingAfter:20 });
+  body += docxPara('D) Golgi apparatus', { size:22, spacingAfter:20 });
+  body += docxPara('ANSWER: B', { size:22, spacingAfter:320 });
+
+  body += docxPara('Now write your own questions below:', { bold:true, size:22, spacingAfter:140 });
+  for(let n=2; n<=8; n++){
+    body += docxPara('Q'+n+'. ', { size:22, spacingAfter:20 });
+    body += docxPara('A) ', { size:22, spacingAfter:20 });
+    body += docxPara('B) ', { size:22, spacingAfter:20 });
+    body += docxPara('C) ', { size:22, spacingAfter:20 });
+    body += docxPara('D) ', { size:22, spacingAfter:20 });
+    body += docxPara('ANSWER: ', { size:22, spacingAfter:260 });
+  }
+
+  await buildAndDownloadDocx('Quiz_Question_Template.docx', body);
+}
+
+function buildExternalAIPrompt(){
+  const topic = (document.getElementById('aiTopic').value || '').trim() || '[YOUR TOPIC HERE]';
+  const count = document.getElementById('aiCount').value || '10';
+  const difficulty = document.getElementById('aiDifficulty').value || 'medium';
+  const subject = (document.getElementById('qSubject').value || '').trim();
+
+  let p = 'Create ' + count + ' multiple-choice quiz questions about "' + topic + '"';
+  if(subject) p += ' for the subject "' + subject + '"';
+  p += ', at a ' + difficulty + ' difficulty level.\n\n';
+  p += 'Format EVERY question exactly like this, with one blank line between questions:\n\n';
+  p += 'Q1. Question text here?\nA) Choice one\nB) Choice two\nC) Choice three\nD) Choice four\nANSWER: B\n\n';
+  p += 'Rules:\n';
+  p += '- Exactly 4 answer choices per question, with only one correct answer.\n';
+  p += '- Number the questions sequentially starting at Q1.\n';
+  p += '- Put the correct choice\'s letter after "ANSWER:".\n';
+  p += '- Do not add explanations, headings, or any text outside this format.\n\n';
+  p += 'Once you have the output, paste it into a blank Word or Google Docs file, save it as a .docx file, then upload it here using "Upload questions from Word file."';
+  return p;
+}
+
+function copyAIPrompt(){
+  const text = buildExternalAIPrompt();
+  const box = document.getElementById('aiExternalPromptBox');
+  const msg = document.getElementById('aiExternalPromptMsg');
+  if(box){ box.value = text; box.classList.remove('hidden'); }
+  const showCopied = () => {
+    if(msg){ msg.textContent = 'Prompt copied! Paste it into ChatGPT, Copilot, or another AI tool.'; msg.classList.add('show'); setTimeout(() => msg.classList.remove('show'), 4000); }
+  };
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(text).then(showCopied).catch(() => { if(box) box.select(); });
+  } else if(box){
+    box.select();
+  }
+}
+
+function docxXmlToText(xml){
+  const paras = xml.match(/<w:p[ >][\s\S]*?<\/w:p>/g) || [];
+  return paras.map(p => {
+    const runs = p.match(/<w:t[^>]*>([\s\S]*?)<\/w:t>/g) || [];
+    const text = runs.map(r => r.replace(/^<w:t[^>]*>/, '').replace(/<\/w:t>$/, '')).join('');
+    return text.replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&quot;/g,'"').replace(/&apos;/g,"'").replace(/&amp;/g,'&');
+  }).join('\n');
+}
+
+function parseQuestionsFromText(text){
+  const lines = text.split(/\r?\n/).map(l => l.trim()).filter(l => l.length);
+  const qStart = /^(?:Q(?:uestion)?\s*)?(\d+)[\.\):]\s*(.+)$/i;
+  const choiceStart = /^([A-Da-d])[\.\)]\s*(.*)$/;
+  const answerLine = /^(?:ANSWER|ANS|CORRECT(?:\s*ANSWER)?)\s*[:\-]?\s*([A-Da-d])\b/i;
+
+  const raw = [];
+  let current = null;
+  lines.forEach(line => {
+    const am = line.match(answerLine);
+    if(am && current){ current.correctLetter = am[1].toUpperCase(); return; }
+    const cm = line.match(choiceStart);
+    if(cm && current){ current.choices.push(cm[2].trim()); return; }
+    const qm = line.match(qStart);
+    if(qm){ if(current) raw.push(current); current = { text: qm[2].trim(), choices: [], correctLetter: null }; return; }
+    if(current){
+      if(current.choices.length === 0) current.text += ' ' + line;
+      else current.choices[current.choices.length-1] += ' ' + line;
+    }
+  });
+  if(current) raw.push(current);
+
+  return raw.filter(q => q.text && q.choices.length >= 2).map(q => {
+    const qid = newQid();
+    const choicesText = q.choices.slice(0,4).map(c => c.trim());
+    while(choicesText.length < 4) choicesText.push('');
+    let correctIndex = q.correctLetter ? (q.correctLetter.charCodeAt(0) - 65) : 0;
+    if(correctIndex < 0 || correctIndex >= choicesText.length) correctIndex = 0;
+    return {
+      qid,
+      text: q.text,
+      choices: choicesText.map((t,i) => ({ cid: qid+'_c'+(i+1), text: t })),
+      correctCid: qid + '_c' + (correctIndex+1)
+    };
+  });
+}
+
+async function handleWordUpload(fileInput){
+  const file = fileInput.files && fileInput.files[0];
+  if(!file) return;
+  const statusEl = document.getElementById('uploadWordMsg');
+  const setStatus = (text, ok) => { if(statusEl){ statusEl.textContent = text; statusEl.className = 'msg ' + (ok ? 'msg-ok' : 'msg-error') + ' show'; } };
+  setStatus('Reading file…', true);
+  try{
+    const lower = file.name.toLowerCase();
+    let text;
+    if(lower.endsWith('.docx')){
+      if(!docxSupported()) throw new Error('Your browser can\'t read .docx files here. Please update your browser, or upload a .txt file instead.');
+      const bytes = new Uint8Array(await file.arrayBuffer());
+      const xmlBytes = await readZipEntry(bytes, 'word/document.xml');
+      if(!xmlBytes) throw new Error('Could not find any content inside this .docx file. Make sure it\'s a valid Word document.');
+      text = docxXmlToText(new TextDecoder().decode(xmlBytes));
+    } else if(lower.endsWith('.txt')){
+      text = await file.text();
+    } else if(lower.endsWith('.doc')){
+      text = await file.text();
+      if(text.slice(0,2) === 'PK'){
+        throw new Error('This old-format .doc file can\'t be read here. In Word, choose "Save As" → "Word Document (*.docx)" or "Plain Text (*.txt)", then upload that instead.');
+      }
+      if(/<[a-z][\s\S]*>/i.test(text)){
+        const div = document.createElement('div');
+        div.innerHTML = text;
+        text = div.innerText || div.textContent || '';
+      }
+    } else {
+      throw new Error('Please upload a .docx, .doc, or .txt file.');
+    }
+
+    const parsed = parseQuestionsFromText(text);
+    if(!parsed.length){
+      throw new Error('No questions found in that file. Make sure it follows the template format (Q1. / A) / B) / C) / D) / ANSWER:).');
+    }
+    if(currentQuestions.length + parsed.length > 50){
+      throw new Error('That file has ' + parsed.length + ' questions, which would exceed the 50 question limit (' + currentQuestions.length + ' already added).');
+    }
+    currentQuestions = currentQuestions.concat(parsed);
+    renderQuestions();
+    setStatus('Added ' + parsed.length + ' question' + (parsed.length === 1 ? '' : 's') + ' from "' + file.name + '".', true);
+  }catch(err){
+    setStatus(err.message || 'Could not read that file.', false);
+  }finally{
+    fileInput.value = '';
+  }
+}
+
+/* =========================================================================
+   AI REFERENCE MATERIAL: upload a Word (.docx) or PDF file so the AI
+   grounds its generated questions in the teacher's own content, instead of
+   inventing material unrelated to what was actually taught.
+   ========================================================================= */
+const AI_REFERENCE_MAX_CHARS = 20000; // keeps the Gemini prompt a reasonable size
+
+/* Lazily loads pdf.js from a CDN the first time a PDF reference is
+   uploaded (docx/txt references never need it). Memoized so repeated
+   uploads don't re-inject the script. */
+function ensurePdfJsLoaded(){
+  if(pdfJsLoadPromise) return pdfJsLoadPromise;
+  pdfJsLoadPromise = new Promise((resolve, reject) => {
+    if(window.pdfjsLib){ resolve(window.pdfjsLib); return; }
+    const script = document.createElement('script');
+    script.src = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js';
+    script.onload = () => {
+      try{
+        window.pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
+        resolve(window.pdfjsLib);
+      }catch(e){ reject(e); }
+    };
+    script.onerror = () => reject(new Error('Could not load the PDF reader library. Please check your internet connection and try again, or upload a Word (.docx) file instead.'));
+    document.head.appendChild(script);
+  });
+  return pdfJsLoadPromise;
+}
+
+async function extractTextFromDocx(file){
+  if(!docxSupported()) throw new Error('Your browser can\'t read .docx files here. Please update your browser (Chrome, Edge, or Firefox), or upload a PDF instead.');
+  const bytes = new Uint8Array(await file.arrayBuffer());
+  const xmlBytes = await readZipEntry(bytes, 'word/document.xml');
+  if(!xmlBytes) throw new Error('Could not find any content inside this .docx file. Make sure it\'s a valid Word document.');
+  return docxXmlToText(new TextDecoder().decode(xmlBytes));
+}
+
+async function extractTextFromPdf(file){
+  const pdfjsLib = await ensurePdfJsLoaded();
+  const bytes = new Uint8Array(await file.arrayBuffer());
+  const pdf = await pdfjsLib.getDocument({ data: bytes }).promise;
+  const pageTexts = [];
+  const maxPages = Math.min(pdf.numPages, 60); // safety cap for very long PDFs
+  for(let i = 1; i <= maxPages; i++){
+    const page = await pdf.getPage(i);
+    const content = await page.getTextContent();
+    const pageText = content.items.map(item => item.str).join(' ');
+    pageTexts.push(pageText);
+    // Stop early once we already have plenty of text — no need to OCR/parse
+    // an entire textbook when a few pages already cover the reference need.
+    if(pageTexts.join('\n').length > AI_REFERENCE_MAX_CHARS * 1.5) break;
+  }
+  return pageTexts.join('\n');
+}
+
+/* Merges manually-pasted reference text with any uploaded-file reference
+   text into a single block for the prompt, respecting the same character
+   budget used for uploaded files. Pasted text is kept first since it was
+   just typed/pasted intentionally for this generation. */
+function combineReferenceText(pastedText, fileText){
+  const parts = [];
+  if(pastedText) parts.push(pastedText);
+  if(fileText) parts.push(fileText);
+  if(!parts.length) return '';
+  let combined = parts.join('\n\n---\n\n');
+  if(combined.length > AI_REFERENCE_MAX_CHARS){
+    combined = combined.slice(0, AI_REFERENCE_MAX_CHARS);
+  }
+  return combined;
+}
+
+async function handleAIReferenceUpload(fileInput){
+  const file = fileInput.files && fileInput.files[0];
+  if(!file) return;
+  const statusEl = document.getElementById('aiReferenceMsg');
+  const setStatus = (text, ok) => { if(statusEl){ statusEl.textContent = text; statusEl.className = 'msg ' + (ok ? 'msg-ok' : 'msg-error') + ' show'; } };
+  setStatus('Reading "' + file.name + '"…', true);
+  try{
+    const lower = file.name.toLowerCase();
+    let text;
+    if(lower.endsWith('.docx')){
+      text = await extractTextFromDocx(file);
+    } else if(lower.endsWith('.pdf')){
+      text = await extractTextFromPdf(file);
+    } else {
+      throw new Error('Please upload a .docx or .pdf file.');
+    }
+    text = text.replace(/[ \t]+/g, ' ').replace(/\n{3,}/g, '\n\n').trim();
+    if(!text){
+      throw new Error('No readable text was found in that file. If it\'s a scanned/image-only PDF, try a Word file or a text-based PDF instead.');
+    }
+    let truncatedNote = '';
+    if(text.length > AI_REFERENCE_MAX_CHARS){
+      text = text.slice(0, AI_REFERENCE_MAX_CHARS);
+      truncatedNote = ' (using the first ~' + AI_REFERENCE_MAX_CHARS.toLocaleString() + ' characters)';
+    }
+    aiReferenceText = text;
+    aiReferenceFileName = file.name;
+    document.getElementById('aiReferenceClearBtn').classList.remove('hidden');
+    setStatus('Loaded "' + file.name + '" — ' + text.length.toLocaleString() + ' characters will guide question generation' + truncatedNote + '.', true);
+  }catch(err){
+    aiReferenceText = '';
+    aiReferenceFileName = '';
+    document.getElementById('aiReferenceClearBtn').classList.add('hidden');
+    setStatus(err.message || 'Could not read that file.', false);
+  }finally{
+    fileInput.value = '';
+  }
+}
+
+function clearAIReference(){
+  aiReferenceText = '';
+  aiReferenceFileName = '';
+  document.getElementById('aiReferenceClearBtn').classList.add('hidden');
+  const statusEl = document.getElementById('aiReferenceMsg');
+  if(statusEl){ statusEl.textContent = 'Reference file removed.'; statusEl.className = 'msg msg-ok show'; }
+}
+
+/* Clears the AI generator's transient inputs (topic, competencies, reference
+   file) — these guide generation only and are never part of the saved quiz,
+   so each new/edited quiz should start with a clean slate. */
+function resetAIGeneratorFields(){
+  const topicEl = document.getElementById('aiTopic');
+  const compEl = document.getElementById('aiCompetencies');
+  const pasteEl = document.getElementById('aiReferencePaste');
+  const refMsg = document.getElementById('aiReferenceMsg');
+  const refClearBtn = document.getElementById('aiReferenceClearBtn');
+  if(topicEl) topicEl.value = '';
+  if(compEl) compEl.value = '';
+  if(pasteEl) pasteEl.value = '';
+  if(refMsg){ refMsg.textContent = ''; refMsg.classList.remove('show'); }
+  if(refClearBtn) refClearBtn.classList.add('hidden');
+  aiReferenceText = '';
+  aiReferenceFileName = '';
+}
+
+async function generateAI(){
+  const topic = document.getElementById('aiTopic').value.trim();
+  const count = parseInt(document.getElementById('aiCount').value) || 5;
+  const difficulty = document.getElementById('aiDifficulty').value;
+  const subject = document.getElementById('qSubject').value.trim();
+  const competencies = document.getElementById('aiCompetencies').value.trim();
+  const pastedReference = document.getElementById('aiReferencePaste').value.trim();
+  if(!topic && !competencies && !aiReferenceText && !pastedReference){
+    alert('Enter a topic, list competencies, upload a reference file, or paste reference text for the AI to base questions on.');
+    return;
+  }
+  if(currentQuestions.length + count > 50){ alert('That would exceed the 50 question limit.'); return; }
+  if(!geminiApiKey){
+    alert('Add your Gemini API key first: go to "← Back to dashboard" and fill in the AI Settings section, then come back here.');
+    return;
+  }
+  const combinedReference = combineReferenceText(pastedReference, aiReferenceText);
+  const btn = document.getElementById('aiGenerateBtn');
+  const originalLabel = btn ? btn.textContent : '';
+  if(btn){ btn.disabled = true; btn.textContent = 'Generating…'; }
+  try{
+    const questions = await callGeminiForQuestions({ topic, subject, difficulty, count, referenceText: combinedReference, competencies });
+    if(!questions.length){
+      alert('The AI did not return any usable questions. Please try again, perhaps with a simpler topic.');
+      return;
+    }
+    currentQuestions = currentQuestions.concat(questions);
+    renderQuestions();
+  }catch(err){
+    alert(err.message || 'Could not generate questions.');
+  }finally{
+    if(btn){ btn.disabled = false; btn.textContent = originalLabel; }
+  }
+}
+
+function validateQuiz(){
+  const title = document.getElementById('qTitle').value.trim();
+  if(!title) return 'Give the quiz a title.';
+  if(currentQuestions.length === 0) return 'Add at least one question.';
+  for(let i=0;i<currentQuestions.length;i++){
+    const q = currentQuestions[i];
+    if(!q.text.trim()) return 'Question '+(i+1)+' is missing its text.';
+    for(let ci=0; ci<q.choices.length; ci++){
+      if(!q.choices[ci].text.trim()) return 'Question '+(i+1)+' is missing choice text.';
+    }
+    if(!q.correctCid) return 'Question '+(i+1)+' needs a correct answer selected.';
+  }
+  return null;
+}
+
+async function saveQuiz(){
+  const msg = document.getElementById('editorMsg');
+  msg.classList.remove('show');
+  const err = validateQuiz();
+  if(err){ msg.textContent = err; msg.classList.add('show'); return; }
+
+  const payload = {
+    password: teacherPassword,
+    quizCode: document.getElementById('qCode').value.trim().toUpperCase(),
+    title: document.getElementById('qTitle').value.trim(),
+    subject: document.getElementById('qSubject').value.trim(),
+    timerMinutes: parseInt(document.getElementById('qTimer').value) || 15,
+    passingScore: parseInt(document.getElementById('qPassing').value) || 60,
+    openDateTime: document.getElementById('qOpen').value,
+    closeDateTime: document.getElementById('qClose').value,
+    randomizeQuestions: document.getElementById('qRandQ').checked,
+    randomizeChoices: document.getElementById('qRandC').checked,
+    oneAttempt: document.getElementById('qOneAttempt').checked,
+    questions: currentQuestions
+  };
+
+  const res = editingQuizCode
+    ? await api('updateQuiz', payload)
+    : await api('createQuiz', payload);
+
+  if(!res.success){ msg.textContent = res.message || 'Could not save quiz.'; msg.classList.add('show'); return; }
+
+  const savedCode = (res.quizCode) || (res.quiz && res.quiz.quizCode) || payload.quizCode || editingQuizCode;
+  if(savedCode){
+    showShareLink(savedCode, payload.title);
+  } else {
+    showScreen('screen-teacher-dashboard');
+    loadQuizzes();
+  }
+}
+
+/* =========================================================================
+   TEACHER: SUBMISSIONS
+   ========================================================================= */
+async function openSubmissions(quizCode, title){
+  currentSubsQuizCode = quizCode;
+  document.getElementById('subsCode').textContent = quizCode;
+  document.getElementById('subsTitle').textContent = title;
+  showScreen('screen-submissions');
+  const tbody = document.getElementById('subsTbody');
+  tbody.innerHTML = '<tr><td colspan="8">Loading…</td></tr>';
+  const res = await api('getSubmissions', { password: teacherPassword, quizCode });
+  if(!res.success){ tbody.innerHTML = '<tr><td colspan="8">'+escapeHtml(res.message||'Error loading submissions.')+'</td></tr>'; return; }
+  currentSubs = res.submissions;
+  renderSubs();
+}
+
+function fmtDateTime(v){
+  if(!v) return '—';
+  const d = new Date(v);
+  if(isNaN(d)) return String(v);
+  return d.toLocaleString();
+}
+function fmtDuration(sec){
+  sec = Number(sec)||0;
+  const m = Math.floor(sec/60), s = sec%60;
+  return m+':'+String(s).padStart(2,'0');
+}
+
+function renderSubs(){
+  const tbody = document.getElementById('subsTbody');
+  const table = document.getElementById('subsTable');
+  const empty = document.getElementById('subsEmpty');
+  if(!currentSubs.length){
+    table.style.display = 'none';
+    empty.style.display = 'block';
+    return;
+  }
+  table.style.display = '';
+  empty.style.display = 'none';
+  tbody.innerHTML = '';
+  currentSubs.forEach(s => {
+    const tr = document.createElement('tr');
+    const passed = Number(s.percentage) >= 0; // pass/fail determined against quiz passing score already baked into result at submit time isn't stored directly; show tag using percentage vs nothing available here so just show percentage
+    tr.innerHTML = `
+      <td>${escapeHtml(s.name)}</td>
+      <td>${escapeHtml(s.section)}</td>
+      <td>${escapeHtml(String(s.score))}</td>
+      <td>${escapeHtml(String(s.percentage))}%</td>
+      <td>${s.status === 'Completed' ? '<span class="pass-tag">Completed</span>' : escapeHtml(s.status)}</td>
+      <td>${fmtDateTime(s.startTime)}</td>
+      <td>${fmtDateTime(s.endTime)}</td>
+      <td>${fmtDuration(s.durationSeconds)}</td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+function csvEscape(v){
+  v = (v===null||v===undefined) ? '' : String(v);
+  if(/[",\n]/.test(v)) return '"' + v.replace(/"/g,'""') + '"';
+  return v;
+}
+
+function downloadCsv(){
+  if(!currentSubs.length){ alert('No submissions to download yet.'); return; }
+  const headers = ['Timestamp','Quiz Code','Name','Section','Score','Percentage','Start Time','End Time','Duration (sec)','Status','Answers'];
+  const rows = [headers.join(',')];
+  currentSubs.forEach(s => {
+    rows.push([
+      csvEscape(fmtDateTime(s.timestamp)), csvEscape(s.quizCode), csvEscape(s.name), csvEscape(s.section),
+      csvEscape(s.score), csvEscape(s.percentage), csvEscape(fmtDateTime(s.startTime)), csvEscape(fmtDateTime(s.endTime)),
+      csvEscape(s.durationSeconds), csvEscape(s.status), csvEscape(s.answers)
+    ].join(','));
+  });
+  const blob = new Blob(["\uFEFF" + rows.join('\r\n')], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'quiz-results-' + currentSubsQuizCode + '.csv';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+async function clearSubmissionsConfirm(){
+  if(!currentSubsQuizCode) return;
+  if(!currentSubs.length){ alert('No submissions to clear for this quiz.'); return; }
+  if(!confirm('Clear all submissions for this quiz? This cannot be undone. The quiz itself will not be affected.')) return;
+  const res = await api('clearSubmissions', { password: teacherPassword, quizCode: currentSubsQuizCode });
+  if(res.success){
+    currentSubs = [];
+    renderSubs();
+  } else {
+    alert(res.message || 'Could not clear submissions.');
+  }
+}
+
+/* =========================================================================
+   STUDENT: PROGRESS PERSISTENCE (localStorage)
+   ========================================================================= */
+function progressKey(quizCode, name, section){
+  return 'oqs_progress_' + quizCode.toUpperCase() + '_' + name.trim().toLowerCase() + '_' + section.trim().toLowerCase();
+}
+
+function saveProgress(){
+  if(!student.quiz) return;
+  const key = progressKey(student.quizCode, student.name, student.section);
+  localStorage.setItem(key, JSON.stringify({
+    quiz: student.quiz,
+    order: student.order,
+    answers: student.answers,
+    currentIndex: student.currentIndex,
+    startTime: student.startTime,
+    endTimestamp: student.endTimestamp
+  }));
+}
+
+function loadProgress(quizCode, name, section){
+  const key = progressKey(quizCode, name, section);
+  const raw = localStorage.getItem(key);
+  if(!raw) return null;
+  try{ return JSON.parse(raw); } catch(e){ return null; }
+}
+
+function clearProgress(){
+  const key = progressKey(student.quizCode, student.name, student.section);
+  localStorage.removeItem(key);
+}
+
+/* =========================================================================
+   STUDENT: FLOW
+   ========================================================================= */
+async function startStudentQuiz(){
+  getAudioCtx(); // unlock audio on this user gesture, before any quiz sounds/speech play
+  const msg = document.getElementById('studentMsg');
+  msg.classList.remove('show');
+  const lastName = document.getElementById('stLastName').value.trim().toUpperCase();
+  const firstName = document.getElementById('stFirstName').value.trim().toUpperCase();
+  const middleName = document.getElementById('stMiddleName').value.trim().toUpperCase();
+  const section = document.getElementById('stSection').value;
+  const code = document.getElementById('stCode').value.trim().toUpperCase();
+  if(!lastName || !firstName || !section || !code){
+    msg.textContent = 'Please fill in your last name, first name, section, and the quiz code.';
+    msg.classList.add('show');
+    return;
+  }
+  const name = lastName + ', ' + firstName + (middleName ? ' ' + middleName : '');
+
+  const saved = loadProgress(code, name, section);
+  if(saved && saved.endTimestamp && Date.now() < saved.endTimestamp){
+    // Resume in-progress attempt without re-contacting the server.
+    student.name = name; student.section = section; student.quizCode = code;
+    student.quiz = saved.quiz; student.order = saved.order; student.answers = saved.answers;
+    student.currentIndex = saved.currentIndex; student.startTime = saved.startTime; student.endTimestamp = saved.endTimestamp;
+    student.submitted = false;
+    enterQuizScreen();
+    return;
+  }
+
+  const res = await api('getQuizForStudent', { quizCode: code, name, section });
+  if(!res.success){
+    msg.textContent = res.message || 'Could not start the quiz.';
+    msg.classList.add('show');
+    return;
+  }
+
+  student.name = name; student.section = section; student.quizCode = code;
+  student.quiz = res.quiz;
+  student.order = res.quiz.questions.map(q => q.qid);
+  student.answers = {};
+  student.currentIndex = 0;
+  student.startTime = Date.now();
+  student.endTimestamp = Date.now() + (res.quiz.timerMinutes * 60000);
+  student.submitted = false;
+  saveProgress();
+  enterQuizScreen();
+}
+
+let historyTrapped = false;
+function trapBackButton(){
+  if(historyTrapped) return;
+  historyTrapped = true;
+  history.pushState(null, '', location.href);
+  window.addEventListener('popstate', () => {
+    if(!student.submitted){
+      history.pushState(null, '', location.href);
+    }
+  });
+}
+
+function enterQuizScreen(){
+  trapBackButton();
+  document.getElementById('stuTitle').textContent = student.quiz.title;
+  document.getElementById('stuSubject').textContent = student.quiz.subject || '';
+  showScreen('screen-student-quiz');
+  startTimer();
+  renderQuestion();
+}
+
+function startTimer(){
+  if(student.timerHandle) clearInterval(student.timerHandle);
+  student.timeWarningPlayed = false;
+  updateTimerDisplay();
+  student.timerHandle = setInterval(() => {
+    updateTimerDisplay();
+    if(Date.now() >= student.endTimestamp){
+      clearInterval(student.timerHandle);
+      finishQuiz(true);
+    }
+  }, 1000);
+}
+
+function updateTimerDisplay(){
+  const remaining = Math.max(0, Math.round((student.endTimestamp - Date.now())/1000));
+  const m = Math.floor(remaining/60), s = remaining%60;
+  const pill = document.getElementById('timerPill');
+  pill.textContent = m + ':' + String(s).padStart(2,'0');
+  const totalSec = student.quiz.timerMinutes * 60;
+  const frac = remaining / totalSec;
+  pill.classList.remove('warn','danger');
+  if(frac <= 0.1){
+    pill.classList.add('danger');
+    if(!student.timeWarningPlayed && remaining > 0){
+      student.timeWarningPlayed = true;
+      playTimeWarningSound();
+    }
+  }
+  else if(frac <= 0.25) pill.classList.add('warn');
+}
+
+function renderQuestion(){
+  const qid = student.order[student.currentIndex];
+  const q = student.quiz.questions.find(qq => qq.qid === qid);
+  document.getElementById('progressLabel').textContent = 'Question ' + (student.currentIndex+1) + ' of ' + student.order.length;
+  document.getElementById('progressFill').style.width = ((student.currentIndex)/student.order.length*100) + '%';
+  document.getElementById('questionText').textContent = q.text;
+
+  const wrap = document.getElementById('choicesWrap');
+  wrap.innerHTML = '';
+  const letters = ['A','B','C','D','E','F'];
+  const existingAnswer = student.answers[q.qid];
+  q.choices.forEach((c, ci) => {
+    const opt = document.createElement('div');
+    opt.className = 'choice-option' + (existingAnswer === c.cid ? ' selected' : '');
+    opt.innerHTML = `
+      <input type="radio" name="ans_${q.qid}" ${existingAnswer===c.cid?'checked':''}>
+      <span class="opt-letter">${letters[ci]||''}</span>
+      <span class="opt-text">${escapeHtml(c.text)}</span>
+    `;
+    opt.onclick = () => selectChoice(q.qid, c.cid);
+    wrap.appendChild(opt);
+  });
+
+  document.getElementById('nextBtn').disabled = !existingAnswer;
+  document.getElementById('nextBtn').textContent = (student.currentIndex === student.order.length-1) ? 'Submit quiz' : 'Next';
+
+  if(autoSpeechEnabled) speakCurrentQuestion();
+}
+
+function selectChoice(qid, cid){
+  student.answers[qid] = cid;
+  playSelectSound();
+  saveProgress(); // auto-save every answer locally, immediately
+  renderQuestion();
+}
+
+function submitAnswerAndAdvance(){
+  const qid = student.order[student.currentIndex];
+  if(!student.answers[qid]) return; // must select an answer
+  if(student.currentIndex < student.order.length - 1){
+    playNextSound();
+    student.currentIndex++;
+    saveProgress();
+    renderQuestion();
+  } else {
+    finishQuiz(false);
+  }
+}
+
+async function finishQuiz(auto){
+  if(student.submitted) return;
+  student.submitted = true;
+  if(student.timerHandle) clearInterval(student.timerHandle);
+  stopSpeech();
+  if(auto) playTimeUpSound(); else playSubmitSound();
+
+  const res = await api('submitQuiz', {
+    quizCode: student.quizCode,
+    name: student.name,
+    section: student.section,
+    startTime: new Date(student.startTime).toISOString(),
+    endTime: new Date().toISOString(),
+    answers: student.answers
+  });
+
+  if(!res.success){
+    alert(res.message || 'Could not submit your quiz. Please check your connection and try Submit again.');
+    student.submitted = false;
+    return;
+  }
+
+  clearProgress();
+  showResult(res.result, auto);
+}
+
+function showResult(result, auto){
+  document.getElementById('resultQuizTitle').textContent = student.quiz.title + (auto ? ' · Time expired' : '');
+  document.getElementById('resultPercentage').textContent = result.percentage + '%';
+  document.getElementById('resultCorrect').textContent = result.correctCount + '/' + result.totalQuestions;
+  document.getElementById('resultDuration').textContent = fmtDuration(Math.round((Date.now()-student.startTime)/1000));
+  document.getElementById('resultPassing').textContent = result.passingScore + '%';
+  const tag = document.getElementById('resultTag');
+  tag.textContent = result.passed ? 'Passed' : 'Did not pass';
+  tag.className = 'result-tag ' + (result.passed ? 'pass' : 'fail');
+  showScreen('screen-student-result');
+  playResultSound(result.passed);
+}
+
+/* =========================================================================
+   UTIL
+   ========================================================================= */
+function escapeHtml(str){
+  return String(str==null?'':str).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+}
+function escapeAttr(str){ return escapeHtml(str); }
+
+/* Init */
+initGeminiKeyUI();
+initWebsiteUrlUI();
+initAudioPrefsUI();
+(function handleIncomingShareLink(){
+  const params = new URLSearchParams(location.search);
+  if(params.get('mode') === 'student'){
+    const code = (params.get('code') || '').trim().toUpperCase();
+    enterStudentMode();
+    if(code){
+      const codeInput = document.getElementById('stCode');
+      if(codeInput){
+        codeInput.value = code;
+        codeInput.readOnly = true;
+        codeInput.style.background = '#f2f2f2';
+      }
+    }
+    return;
+  }
+  showScreen('screen-home');
+})();
+</script>
+</body>
+</html>
