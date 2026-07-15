@@ -145,6 +145,14 @@
     transition:border-color .15s ease;
   }
   input:focus,select:focus,textarea:focus{border-color:var(--primary);}
+  .pw-field{position:relative;}
+  .pw-field input{padding-right:42px;}
+  .pw-toggle-btn{
+    position:absolute; right:4px; top:50%; transform:translateY(-50%);
+    background:transparent; border:none; cursor:pointer;
+    font-size:16px; line-height:1; padding:8px; color:var(--ink-soft);
+  }
+  .pw-toggle-btn:hover{color:var(--ink);}
   .grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
   .grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;}
   @media (max-width:680px){
@@ -411,7 +419,10 @@
         <div class="msg msg-error" id="loginMsg"></div>
         <div class="field">
           <label>Password</label>
-          <input type="password" id="teacherPasswordInput" placeholder="••••••••">
+          <div class="pw-field">
+            <input type="password" id="teacherPasswordInput" placeholder="••••••••">
+            <button type="button" class="pw-toggle-btn" data-target="teacherPasswordInput" onclick="togglePasswordVisibility(this)" aria-label="Show password">👁️</button>
+          </div>
         </div>
         <button class="btn btn-primary btn-block" onclick="doTeacherLogin()">Sign in</button>
         <div class="btn-row"><button class="link-btn" onclick="goHome()">← Back</button></div>
@@ -444,6 +455,38 @@
             <button class="btn btn-primary btn-sm" id="geminiSaveBtn" onclick="saveGeminiKey()">Save</button>
             <button class="btn btn-ghost btn-sm hidden" id="geminiEditBtn" onclick="editGeminiKey()">Edit</button>
             <button class="btn btn-danger btn-sm hidden" id="geminiClearBtn" onclick="clearGeminiKey()">Clear</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="ai-panel" style="margin-bottom:0;">
+          <h4>🔒 Teacher Password</h4>
+          <p>Change the password used to sign in to Teacher Mode.</p>
+          <div class="field" style="margin-bottom:10px;">
+            <label>Current password</label>
+            <div class="pw-field">
+              <input type="password" id="pwCurrentInput" placeholder="Current password">
+              <button type="button" class="pw-toggle-btn" data-target="pwCurrentInput" onclick="togglePasswordVisibility(this)" aria-label="Show password">👁️</button>
+            </div>
+          </div>
+          <div class="field" style="margin-bottom:10px;">
+            <label>New password</label>
+            <div class="pw-field">
+              <input type="password" id="pwNewInput" placeholder="New password">
+              <button type="button" class="pw-toggle-btn" data-target="pwNewInput" onclick="togglePasswordVisibility(this)" aria-label="Show password">👁️</button>
+            </div>
+          </div>
+          <div class="field" style="margin-bottom:10px;">
+            <label>Confirm new password</label>
+            <div class="pw-field">
+              <input type="password" id="pwConfirmInput" placeholder="Re-enter new password">
+              <button type="button" class="pw-toggle-btn" data-target="pwConfirmInput" onclick="togglePasswordVisibility(this)" aria-label="Show password">👁️</button>
+            </div>
+          </div>
+          <div class="msg msg-error" id="pwChangeMsg"></div>
+          <div class="btn-row">
+            <button class="btn btn-primary btn-sm" onclick="changeTeacherPassword()">Change password</button>
           </div>
         </div>
       </div>
@@ -977,6 +1020,58 @@ function teacherLogout(){
 }
 
 /* =========================================================================
+   TEACHER: CHANGE PASSWORD
+   ========================================================================= */
+async function changeTeacherPassword(){
+  const msg = document.getElementById('pwChangeMsg');
+  msg.className = 'msg msg-error';
+  const current = document.getElementById('pwCurrentInput').value;
+  const next = document.getElementById('pwNewInput').value;
+  const confirmVal = document.getElementById('pwConfirmInput').value;
+
+  if(!current || !next || !confirmVal){
+    msg.textContent = 'Fill in all three fields.';
+    msg.classList.add('show');
+    return;
+  }
+  if(next !== confirmVal){
+    msg.textContent = 'New password and confirmation do not match.';
+    msg.classList.add('show');
+    return;
+  }
+  if(next.length < 4){
+    msg.textContent = 'Choose a password at least 4 characters long.';
+    msg.classList.add('show');
+    return;
+  }
+
+  const res = await api('changeTeacherPassword', { password: current, newPassword: next });
+  if(!res.success){
+    msg.textContent = res.message || 'Could not change the password.';
+    msg.classList.add('show');
+    return;
+  }
+
+  teacherPassword = next; // keep this session signed in under the new password
+  document.getElementById('pwCurrentInput').value = '';
+  document.getElementById('pwNewInput').value = '';
+  document.getElementById('pwConfirmInput').value = '';
+  msg.className = 'msg msg-ok show';
+  msg.textContent = 'Password changed successfully.';
+}
+
+/* Shows or hides the contents of any password field. `btn` is the toggle
+   button clicked; its data-target attribute names the input to affect. */
+function togglePasswordVisibility(btn){
+  const input = document.getElementById(btn.getAttribute('data-target'));
+  if(!input) return;
+  const showing = input.type === 'text';
+  input.type = showing ? 'password' : 'text';
+  btn.textContent = showing ? '👁️' : '🙈';
+  btn.setAttribute('aria-label', showing ? 'Show password' : 'Hide password');
+}
+
+/* =========================================================================
    TEACHER: LOGIN
    ========================================================================= */
 async function doTeacherLogin(){
@@ -1013,9 +1108,17 @@ async function loadQuizzes(){
   wrap.innerHTML = '';
   const now = new Date();
   res.quizzes.forEach(q => {
+    // `active` is the existing backend flag (already enforced server-side in
+    // getQuizForStudent) that lets a teacher manually open/close a quiz,
+    // independent of its scheduled open/close dates.
+    const isActive = q.active !== false;
     let openState = 'open', label = 'Open';
-    if(q.openDateTime && now < new Date(q.openDateTime)){ openState='closed'; label='Scheduled'; }
-    if(q.closeDateTime && now > new Date(q.closeDateTime)){ openState='closed'; label='Closed'; }
+    if(!isActive){
+      openState = 'closed'; label = 'Closed';
+    } else {
+      if(q.openDateTime && now < new Date(q.openDateTime)){ openState='closed'; label='Scheduled'; }
+      if(q.closeDateTime && now > new Date(q.closeDateTime)){ openState='closed'; label='Closed'; }
+    }
     const row = document.createElement('div');
     row.className = 'quiz-row';
     row.innerHTML = `
@@ -1028,18 +1131,28 @@ async function loadQuizzes(){
         </div>
       </div>
       <div class="btn-row" style="margin-top:0;">
+        <button class="btn ${isActive ? 'btn-ghost' : 'btn-primary'} btn-sm" data-act="toggleopen">${isActive ? '⏸ Close quiz' : '▶ Open quiz'}</button>
         <button class="btn btn-primary btn-sm" data-act="share">🔗 Share</button>
         <button class="btn btn-ghost btn-sm" data-act="subs">View submissions</button>
         <button class="btn btn-ghost btn-sm" data-act="edit">Edit</button>
         <button class="btn btn-danger btn-sm" data-act="del">Delete</button>
       </div>
     `;
+    row.querySelector('[data-act="toggleopen"]').onclick = () => toggleQuizOpenState(q.quizCode, isActive);
     row.querySelector('[data-act="share"]').onclick = () => showShareLink(q.quizCode, q.title);
     row.querySelector('[data-act="subs"]').onclick = () => openSubmissions(q.quizCode, q.title);
     row.querySelector('[data-act="edit"]').onclick = () => openQuizEditor(q.quizCode);
     row.querySelector('[data-act="del"]').onclick = () => deleteQuizConfirm(q.quizCode, q.title);
     wrap.appendChild(row);
   });
+}
+
+/* Toggle a quiz's manual open/closed state via the existing `active` flag.
+   `currentlyActive` is the state BEFORE the click, so we send the opposite
+   value to the backend. */
+async function toggleQuizOpenState(code, currentlyActive){
+  const res = await api('setQuizActive', { password: teacherPassword, quizCode: code, active: !currentlyActive });
+  if(res.success){ loadQuizzes(); } else { alert(res.message || 'Could not update the quiz status.'); }
 }
 
 async function deleteQuizConfirm(code, title){
@@ -1527,7 +1640,7 @@ function speakCurrentQuestion(){
 const GEMINI_MODEL_FALLBACK_CHAIN = ['gemini-flash-latest', 'gemini-2.5-flash', 'gemini-2.5-flash-lite', 'gemini-2.5-pro'];
 
 function buildAIQuestionsPrompt({ topic, subject, difficulty, count, referenceText, competencies }){
-  let p = 'You are helping a Filipino public school teacher create ' + count + ' multiple-choice quiz questions';
+  let p = 'You are an expert Filipino public school item writer creating ' + count + ' rigorous, higher-order-thinking-skills (HOTS) multiple-choice quiz questions';
   if(topic) p += ' about the topic: "' + topic + '"';
   if(subject) p += ' for the subject "' + subject + '"';
   p += '. Difficulty level: ' + difficulty + '.\n';
@@ -1546,10 +1659,18 @@ function buildAIQuestionsPrompt({ topic, subject, difficulty, count, referenceTe
     p += '\nNo topic, reference material, or competencies were given — infer a sensible, generally useful topic for the given subject and difficulty.\n';
   }
 
+  p += '\nQUESTION DESIGN RULES:\n';
+  p += '1. Write questions that require analysis, application, evaluation, comparison, or interpretation of a scenario/data/case — NOT simple recall of a definition, date, or isolated fact. Prefer stems like "Which of the following best explains...", "What would most likely happen if...", "Which option best evaluates/compares...", "Given the situation, which conclusion is most valid...".\n';
+  p += '2. Never write a question whose correct answer can be guessed from wording alone: avoid making the correct choice the longest, most detailed, or most technical-sounding option, and avoid it being the only choice that repeats key terms from the question stem.\n';
+  p += '3. Every question must have EXACTLY 4 choices with exactly one correct answer.\n';
+  p += '4. Make the 3 incorrect choices (distractors) genuinely plausible: conceptually related to the correct answer (common misconceptions, partially-correct reasoning, adjacent concepts, or classic student errors) — never random, unrelated, or obviously silly.\n';
+  p += '5. All 4 choices must be similar in length, grammatical structure, and level of detail, with no choice standing out as oddly short, long, or worded.\n';
+  p += '6. Randomize which position (0-3) holds the correct answer independently for every question, so the correct answers across all ' + count + ' questions do NOT fall into a repeating or sequential pattern (e.g. do not put the correct answer at the same index every time, and do not cycle 0,1,2,3,0,1,2,3...). Mix it unpredictably question to question.\n';
+
   p += '\nEach question must have exactly 4 answer choices, with exactly one correct answer.\n';
   p += 'Return ONLY a JSON array of exactly ' + count + ' objects, each shaped like:\n';
   p += '{"text": "the question text", "choices": ["choice 1","choice 2","choice 3","choice 4"], "correctIndex": 0}\n';
-  p += '"correctIndex" is the zero-based index (0-3) of the correct choice within the "choices" array.\n';
+  p += '"correctIndex" is the zero-based index (0-3) of the correct choice within the "choices" array for that specific question.\n';
   p += 'Do not include any explanation, markdown formatting, or text outside the JSON array.';
   return p;
 }
@@ -1641,14 +1762,32 @@ function parseGeminiQuestions(raw, expectedCount){
     let correctIndex = parseInt(item.correctIndex, 10);
     if(isNaN(correctIndex) || correctIndex < 0 || correctIndex >= choicesText.length) correctIndex = 0;
     const qid = newQid();
+    const choiceObjs = choicesText.map((t, i) => ({ cid: qid + '_c' + (i+1), text: t }));
+    const correctCid = qid + '_c' + (correctIndex+1);
+    // Safety net: even if Gemini ignores the placement instructions and
+    // returns correct answers in a predictable order (e.g. always index 0,
+    // or sequential A,B,C,D), shuffle this question's choices so the final
+    // correct-answer position is unpredictable question to question.
+    // correctCid stays attached to its choice object, so it's still correct
+    // after reordering.
     questions.push({
       qid,
       text: item.text.trim(),
-      choices: choicesText.map((t, i) => ({ cid: qid + '_c' + (i+1), text: t })),
-      correctCid: qid + '_c' + (correctIndex+1)
+      choices: shuffleAIChoices_(choiceObjs),
+      correctCid
     });
   });
   return questions.slice(0, expectedCount || questions.length);
+}
+
+// Fisher-Yates shuffle used only to randomize AI-generated choice order.
+function shuffleAIChoices_(arr){
+  const a = arr.slice();
+  for(let i = a.length - 1; i > 0; i--){
+    const j = Math.floor(Math.random() * (i + 1));
+    const tmp = a[i]; a[i] = a[j]; a[j] = tmp;
+  }
+  return a;
 }
 
 async function callGeminiForQuestions({ topic, subject, difficulty, count, referenceText, competencies }){
@@ -1964,9 +2103,15 @@ function buildExternalAIPrompt(){
   const difficulty = document.getElementById('aiDifficulty').value || 'medium';
   const subject = (document.getElementById('qSubject').value || '').trim();
 
-  let p = 'Create ' + count + ' multiple-choice quiz questions about "' + topic + '"';
+  let p = 'Create ' + count + ' rigorous, higher-order-thinking-skills (HOTS) multiple-choice quiz questions about "' + topic + '"';
   if(subject) p += ' for the subject "' + subject + '"';
   p += ', at a ' + difficulty + ' difficulty level.\n\n';
+  p += 'Question design rules:\n';
+  p += '- Require analysis, application, evaluation, comparison, or interpretation of a scenario/data/case — NOT simple recall of a definition, date, or isolated fact.\n';
+  p += '- Never make the correct answer guessable from wording alone: don\'t make it the longest, most detailed, or most technical-sounding choice, and don\'t make it the only choice that repeats key terms from the question.\n';
+  p += '- Make the 3 wrong choices genuinely plausible and conceptually related (common misconceptions or adjacent concepts), not random or obviously silly.\n';
+  p += '- Keep all 4 choices similar in length, grammatical structure, and level of detail so none of them stands out.\n';
+  p += '- Vary which letter (A, B, C, or D) is correct unpredictably from question to question — do NOT always use the same letter and do NOT cycle through A,B,C,D in order.\n\n';
   p += 'Format EVERY question exactly like this, with one blank line between questions:\n\n';
   p += 'Q1. Question text here?\nA) Choice one\nB) Choice two\nC) Choice three\nD) Choice four\nANSWER: B\n\n';
   p += 'Rules:\n';
